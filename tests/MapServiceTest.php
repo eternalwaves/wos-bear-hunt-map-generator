@@ -20,7 +20,29 @@ class MapServiceTest extends TestCase
         // This ensures each test starts with a clean state
         $this->mockRepository = $this->createMock(\App\Domain\Repository\MapRepositoryInterface::class);
         $excelService = $this->createMock(\App\Application\Service\ExcelService::class);
-        $this->mapService = new MapService($this->mockRepository, $excelService);
+        $weightedCriteriaService = $this->createMock(\App\Application\Service\WeightedCriteriaService::class);
+        
+        // Configure the weighted criteria service mock to return CriteriaWeight instances
+        $weightedCriteriaService->method('createCriteriaWeightsFromArray')
+            ->willReturnCallback(function ($criteriaWeightsData) {
+                $criteriaWeights = [];
+                foreach ($criteriaWeightsData as $data) {
+                    $criteriaWeights[] = new \App\Domain\Map\CriteriaWeight($data['criteria'], $data['weight']);
+                }
+                return $criteriaWeights;
+            });
+        
+        // Configure the weighted criteria service mock to sort furnaces
+        $weightedCriteriaService->method('sortFurnacesByWeightedCriteria')
+            ->willReturnCallback(function ($furnaces, $criteriaWeights) {
+                // Simple sorting by power for testing
+                usort($furnaces, function ($a, $b) {
+                    return $b->getPower() <=> $a->getPower();
+                });
+                return $furnaces;
+            });
+        
+        $this->mapService = new MapService($this->mockRepository, $excelService, $weightedCriteriaService);
     }
 
 
@@ -1452,8 +1474,8 @@ class MapServiceTest extends TestCase
             ->with($mapId)
             ->willReturn(null);
 
-        $this->expectException(\App\Application\Exception\ValidationException::class);
-        $this->expectExceptionMessage("Map not found: {$mapId}");
+        $this->expectException(\App\Application\Exception\MapNotFoundException::class);
+        $this->expectExceptionMessage("Map with ID {$mapId} not found");
 
         $this->mapService->generateMap($mapId);
     }
@@ -1552,6 +1574,243 @@ class MapServiceTest extends TestCase
         // Verify that all furnaces have been positioned
         $furnaces = $map->getFurnaces();
         $this->assertCount(4, $furnaces);
+        
+        foreach ($furnaces as $furnace) {
+            $this->assertNotNull($furnace->getX());
+            $this->assertNotNull($furnace->getY());
+        }
+    }
+
+    public function testGenerateMapWithSpecificVersion()
+    {
+        $mapId = "map_123";
+        $version = "2.0";
+        
+        // Create a map with the specific version
+        $map = new Map("Test Map", $version, $mapId);
+        
+        // Add traps
+        $trap1 = new Trap(10, 20);
+        $trap2 = new Trap(30, 40);
+        $map->addTrap($trap1);
+        $map->addTrap($trap2);
+        
+        // Add furnaces
+        $furnace1 = new Furnace("Furnace 1", "FC1", 100, "R1", 2, "1", null, null, null, 'assigned', false);
+        $furnace2 = new Furnace("Furnace 2", "FC2", 150, "R2", 1, "2", null, null, null, 'assigned', false);
+        $map->addFurnace($furnace1);
+        $map->addFurnace($furnace2);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('findVersion')
+            ->with($mapId, $version)
+            ->willReturn($map);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('save')
+            ->with($this->callback(function (Map $savedMap) use ($version) {
+                return $savedMap->getVersion() === $version;
+            }));
+
+        $this->mapService->generateMap($mapId, ['power', 'level', 'rank', 'participation'], null, $version);
+
+        // Verify that the map retains its version
+        $this->assertEquals($version, $map->getVersion());
+        
+        // Verify that furnaces have been positioned
+        $furnaces = $map->getFurnaces();
+        $this->assertCount(2, $furnaces);
+        
+        foreach ($furnaces as $furnace) {
+            $this->assertNotNull($furnace->getX());
+            $this->assertNotNull($furnace->getY());
+        }
+    }
+
+    public function testGenerateMapWithWeightedCriteria()
+    {
+        $mapId = "map_123";
+        $map = new Map("Test Map", "1.0", $mapId);
+        
+        // Add traps
+        $trap1 = new Trap(10, 20);
+        $trap2 = new Trap(30, 40);
+        $map->addTrap($trap1);
+        $map->addTrap($trap2);
+        
+        // Add furnaces with different characteristics
+        $furnace1 = new Furnace("Furnace 1", "FC1", 100, "R1", 2, "1", null, null, null, 'assigned', false);
+        $furnace2 = new Furnace("Furnace 2", "FC2", 150, "R2", 1, "1", null, null, null, 'assigned', false);
+        $furnace3 = new Furnace("Furnace 3", "FC3", 200, "R3", 3, "1", null, null, null, 'assigned', false);
+        $map->addFurnace($furnace1);
+        $map->addFurnace($furnace2);
+        $map->addFurnace($furnace3);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('findById')
+            ->with($mapId)
+            ->willReturn($map);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('save')
+            ->with($this->callback(function (Map $savedMap) {
+                return $savedMap->getWeightedCriteria() !== null;
+            }));
+
+        // Define weighted criteria that prioritizes power
+        $criteriaWeights = [
+            ['criteria' => 'power', 'weight' => 3.0],
+            ['criteria' => 'level', 'weight' => 1.0],
+            ['criteria' => 'rank', 'weight' => 1.0],
+            ['criteria' => 'participation', 'weight' => 1.0]
+        ];
+
+        $this->mapService->generateMap($mapId, ['power', 'level', 'rank', 'participation'], $criteriaWeights);
+
+        // Verify that weighted criteria was saved to the map
+        $this->assertNotNull($map->getWeightedCriteria());
+        $this->assertEquals($criteriaWeights, $map->getWeightedCriteria());
+        
+        // Verify that furnaces have been positioned
+        $furnaces = $map->getFurnaces();
+        $this->assertCount(3, $furnaces);
+        
+        foreach ($furnaces as $furnace) {
+            $this->assertNotNull($furnace->getX());
+            $this->assertNotNull($furnace->getY());
+        }
+    }
+
+    public function testGenerateMapWithFirstRingExclusion()
+    {
+        $mapId = "map_123";
+        $map = new Map("Test Map", "1.0", $mapId);
+        
+        // Add traps
+        $trap1 = new Trap(10, 20);
+        $trap2 = new Trap(30, 40);
+        $map->addTrap($trap1);
+        $map->addTrap($trap2);
+        
+        // Add furnaces with different trap preferences
+        $furnace1 = new Furnace("Furnace 1", "FC1", 100, "R1", 2, "1", null, null, null, 'assigned', false); // Single trap preference
+        $furnace2 = new Furnace("Furnace 2", "FC2", 150, "R2", 1, "both", null, null, null, 'assigned', false); // Non-single trap preference
+        $furnace3 = new Furnace("Furnace 3", "FC3", 200, "R3", 3, "n/a", null, null, null, 'assigned', false); // Non-single trap preference
+        $map->addFurnace($furnace1);
+        $map->addFurnace($furnace2);
+        $map->addFurnace($furnace3);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('findById')
+            ->with($mapId)
+            ->willReturn($map);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('save')
+            ->with($map);
+
+        $this->mapService->generateMap($mapId);
+
+        // Verify that all furnaces have been positioned
+        $furnaces = $map->getFurnaces();
+        $this->assertCount(3, $furnaces);
+        
+        foreach ($furnaces as $furnace) {
+            $this->assertNotNull($furnace->getX());
+            $this->assertNotNull($furnace->getY());
+            
+            // Verify that furnaces with non-single trap preferences are not in first ring
+            if ($furnace->getTrapPref() === 'both' || $furnace->getTrapPref() === 'n/a') {
+                $traps = $map->getTraps();
+                $trap1CenterX = $traps[0]->getX() + 1;
+                $trap1CenterY = $traps[0]->getY() + 1;
+                $trap2CenterX = $traps[1]->getX() + 1;
+                $trap2CenterY = $traps[1]->getY() + 1;
+                
+                // Calculate distance to both traps
+                $distanceToTrap1 = sqrt(pow($furnace->getX() - $trap1CenterX, 2) + pow($furnace->getY() - $trap1CenterY, 2));
+                $distanceToTrap2 = sqrt(pow($furnace->getX() - $trap2CenterX, 2) + pow($furnace->getY() - $trap2CenterY, 2));
+                
+                // Should be further than first ring distance (4 units)
+                $this->assertGreaterThan(4, $distanceToTrap1);
+                $this->assertGreaterThan(4, $distanceToTrap2);
+            }
+        }
+    }
+
+    public function testGenerateMapWithVersionNotFoundThrowsException()
+    {
+        $mapId = "map_123";
+        $version = "nonexistent_version";
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('findVersion')
+            ->with($mapId, $version)
+            ->willReturn(null);
+
+        $this->expectException(\App\Application\Exception\MapNotFoundException::class);
+        $this->expectExceptionMessage("Map version {$version} not found for map {$mapId}");
+
+        $this->mapService->generateMap($mapId, ['power', 'level', 'rank', 'participation'], null, $version);
+    }
+
+    public function testGenerateMapWithWeightedCriteriaAndVersion()
+    {
+        $mapId = "map_123";
+        $version = "3.0";
+        
+        // Create a map with the specific version
+        $map = new Map("Test Map", $version, $mapId);
+        
+        // Add traps
+        $trap1 = new Trap(10, 20);
+        $trap2 = new Trap(30, 40);
+        $map->addTrap($trap1);
+        $map->addTrap($trap2);
+        
+        // Add furnaces
+        $furnace1 = new Furnace("Furnace 1", "FC1", 100, "R1", 2, "1", null, null, null, 'assigned', false);
+        $furnace2 = new Furnace("Furnace 2", "FC2", 150, "R2", 1, "2", null, null, null, 'assigned', false);
+        $map->addFurnace($furnace1);
+        $map->addFurnace($furnace2);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('findVersion')
+            ->with($mapId, $version)
+            ->willReturn($map);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('save')
+            ->with($this->callback(function (Map $savedMap) use ($version) {
+                return $savedMap->getVersion() === $version && $savedMap->getWeightedCriteria() !== null;
+            }));
+
+        // Define weighted criteria
+        $criteriaWeights = [
+            ['criteria' => 'power', 'weight' => 2.0],
+            ['criteria' => 'level', 'weight' => 1.5],
+            ['criteria' => 'rank', 'weight' => 1.0],
+            ['criteria' => 'participation', 'weight' => 0.5]
+        ];
+
+        $this->mapService->generateMap($mapId, ['power', 'level', 'rank', 'participation'], $criteriaWeights, $version);
+
+        // Verify that the map retains its version and has weighted criteria
+        $this->assertEquals($version, $map->getVersion());
+        $this->assertEquals($criteriaWeights, $map->getWeightedCriteria());
+        
+        // Verify that furnaces have been positioned
+        $furnaces = $map->getFurnaces();
+        $this->assertCount(2, $furnaces);
         
         foreach ($furnaces as $furnace) {
             $this->assertNotNull($furnace->getX());

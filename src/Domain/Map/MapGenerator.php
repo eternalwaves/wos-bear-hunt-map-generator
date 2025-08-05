@@ -44,6 +44,11 @@ class MapGenerator
             $this->generateSpiralPositions();
         }
 
+        // Set weighted criteria on the map if provided
+        if ($criteriaWeights) {
+            $this->map->setWeightedCriteria($criteriaWeights);
+        }
+        
         // Sort furnaces by priority
         $furnaces = $criteriaWeights ? $this->sortFurnacesByWeightedCriteria($criteriaWeights) : $this->sortFurnaces($sortPriority);
         $placedFurnaces = [];

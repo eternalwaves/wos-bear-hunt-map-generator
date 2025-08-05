@@ -299,12 +299,18 @@ class MapService
             $map = $this->getMap($mapId);
         }
         
+        // Convert criteria weights to CriteriaWeight instances if provided
+        $convertedCriteriaWeights = null;
+        if ($criteriaWeights) {
+            $convertedCriteriaWeights = $this->weightedCriteriaService->createCriteriaWeightsFromArray($criteriaWeights);
+        }
+        
         // Save the weighted criteria to the map
-        $map->setWeightedCriteria($criteriaWeights);
+        $map->setWeightedCriteria($convertedCriteriaWeights);
         
         // Inject WeightedCriteriaService if criteriaWeights are provided
-        $mapGenerator = new MapGenerator($map, $criteriaWeights ? $this->weightedCriteriaService : null);
-        $mapGenerator->generateMap($sortPriority, $criteriaWeights);
+        $mapGenerator = new MapGenerator($map, $convertedCriteriaWeights ? $this->weightedCriteriaService : null);
+        $mapGenerator->generateMap($sortPriority, $convertedCriteriaWeights);
 
         $this->mapRepository->save($map);
     }
