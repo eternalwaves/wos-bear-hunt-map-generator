@@ -1,0 +1,762 @@
+/* Universal box-sizing */
+* {
+    box-sizing: border-box;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e1e5e9;
+}
+
+.header h1 {
+    margin: 0;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-info span {
+    font-weight: 500;
+    color: #333;
+}
+
+.user-info a {
+    color: #667eea;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.user-info a:hover {
+    background: #f8f9fa;
+    text-decoration: underline;
+}
+
+/* General Page Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    padding: 0;
+    background-color: #f4f4f4;
+    text-align: center;
+}
+
+/* Headings */
+h1 {
+    color: #333;
+}
+
+h2 {
+    color: #555;
+    margin-top: 20px;
+}
+
+/* Forms */
+form {
+    background: white;
+    padding: 15px;
+    margin: 10px auto;
+    width: 50%;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+input, button, select {
+    margin: 5px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+input:disabled,
+button:disabled,
+select:disabled {
+    background-color: #DDD !important;
+    cursor: not-allowed;
+}
+
+/* Buttons */
+button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button.lockBtn[data-locked='false'] {
+    background: green;
+}
+button.lockBtn[data-locked='false']:hover,
+button.lockBtn[data-locked='false']:focus {
+    background: darkred;
+}
+button.lockBtn[data-locked='true'] {
+    background: darkred;
+}
+button.lockBtn[data-locked='true']:hover,
+button.lockBtn[data-locked='true']:focus {
+    background: green;
+}
+
+.shiftFurnaceBtns button {
+    line-height: 1.5em;
+    width: 2.5em;
+}
+
+/* Tables */
+table {
+    width: 80%;
+    margin: 15px auto;
+    border-collapse: collapse;
+    background: white;
+}
+
+thead {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #007BFF;
+    color: white;
+}
+
+.shiftFurnaceBtns {
+    min-width: 7.25em;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.actionBtns {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.edit-level,
+.edit-rank {
+    width: 3.05em;
+}
+
+.edit-power {
+    width: 7.25em;
+}
+
+.edit-participation,
+.edit-coord {
+    width: 6em;
+}
+.edit-trap-pref {
+    width: 4.5em;
+}
+
+/* Furance Table */
+.unsaved {
+    background-color: #FAD800 !important;
+}
+
+/* Make unsaved styles take precedence over status styles */
+.unsaved.assigned,
+.unsaved.moved,
+.unsaved.messaged,
+.unsaved.wrong {
+    background-color: #FAD800 !important;
+}
+
+text.unsaved {
+    fill: #F00;
+    font-weight: bold;
+}
+
+rect.unsaved {
+    fill: #FAD800 !important;
+}
+
+/* Make unsaved SVG styles take precedence over status styles */
+rect.unsaved.assigned,
+rect.unsaved.moved,
+rect.unsaved.messaged,
+rect.unsaved.wrong {
+    fill: #FAD800 !important;
+}
+
+.wrong {
+    background-color: #FF2A04 !important;
+}
+text.wrong {
+    fill: #FFF;
+    font-weight: bold;
+}
+rect.wrong {
+    fill: #FF2A04;
+}
+
+.messaged {
+    background-color: #FFAF3D !important;
+}
+rect.messaged {
+    fill: #FFAF3D;
+}
+
+.moved {
+    background-color: #00E200 !important;
+}
+rect.moved {
+    fill: #00E200;
+}
+
+.assigned {
+    background-color: #2DCCFF !important;
+}
+rect.assigned {
+    fill: #2DCCFF;
+}
+
+/* Sorting Priority List */
+#sortPriorityList {
+    list-style-type: none;
+    padding: 0;
+    width: 50%;
+    margin: auto;
+}
+
+#sortPriorityList li {
+    background: #ddd;
+    padding: 10px;
+    margin: 5px;
+    cursor: grab;
+    border-radius: 4px;
+    transition: background 0.2s ease-in-out;
+}
+
+#sortPriorityList li:hover {
+    background: #ccc;
+}
+
+/* Priority Controls */
+.priority-controls {
+    margin: 20px 0;
+}
+
+.priority-mode {
+    margin-bottom: 20px;
+}
+
+.priority-mode label {
+    display: inline-block;
+    margin-right: 20px;
+    cursor: pointer;
+}
+
+.priority-mode input[type="radio"] {
+    margin-right: 5px;
+}
+
+/* Weighted Criteria Styles */
+#weightedCriteriaList {
+    max-width: 500px;
+}
+
+.criteria-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+.criteria-item label {
+    min-width: 150px;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.weight-slider {
+    flex: 1;
+    margin: 0 10px;
+}
+
+.weight-value {
+    min-width: 40px;
+    text-align: right;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Ghost Class for Sorting */
+.sortable-ghost {
+    background: #bbb;
+    opacity: 0.7;
+}
+
+/* Legend Display */
+div#mapLegend {
+    text-align: left;
+}
+
+div#mapLegend span {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+}
+
+/* Map Display */
+#map {
+    margin-top: 20px;
+    padding: 10px;
+    background: white;
+    display: block;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    overflow-x: auto;
+}
+
+#map svg:not(.zoomed) {
+    cursor: -webkit-zoom-in;
+    cursor: zoom-in;
+    height: auto;
+    max-width: 100%;
+}
+
+#map svg.zoomed {
+    cursor: -webkit-zoom-out;
+    cursor: zoom-out;
+    height: auto;
+    width: auto;
+}
+
+
+/* Full Body Loader */
+#loader {
+    background: #ffffff;
+    background: rgba(255, 255, 255, .5);
+    bottom: 0;
+    cursor: wait;
+    display: block;
+    height: 100%;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 100%;
+    z-index: 5;
+}
+
+#spinner {
+    box-sizing: border-box;
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border: 20px dotted #007BFF;
+    border-radius: 50%;
+    left: calc(50% - 50px);
+    top: calc(50% - 50px);
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Table Controls */
+.table-controls {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.table-controls button {
+    margin-right: 10px;
+}
+
+/* Chief Gear Section */
+.gear-section {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.gear-section h3 {
+    margin: 0 0 10px 0;
+    color: #555;
+    font-size: 16px;
+}
+
+.gear-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.gear-row input,
+.gear-row select {
+    flex: 1;
+    margin: 0;
+}
+
+.gear-row select[name$="_level"] {
+    flex: 1;
+}
+
+.gear-row input[name$="_charms"] {
+    flex: 1;
+}
+
+/* Gear columns in table */
+.gear-columns {
+    display: none;
+}
+
+.gear-columns.show {
+    display: table-cell;
+}
+
+.gear-cell {
+    font-size: 12px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gear-level {
+    font-weight: bold;
+    color: #007BFF;
+}
+
+.gear-charms {
+    color: #666;
+    font-size: 11px;
+}
+
+/* Gear input fields */
+.edit-gear-level,
+.edit-gear-charms {
+    width: 100%;
+    font-size: 11px;
+    padding: 2px 4px;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    margin: 1px 0;
+}
+
+.edit-gear-level {
+    font-weight: bold;
+    color: #007BFF;
+    background-color: #fff;
+}
+
+.edit-gear-charms {
+    color: #666;
+}
+
+.gear-cell {
+    padding: 2px;
+    vertical-align: top;
+}
+
+.gear-cell .gear-level,
+.gear-cell .gear-charms {
+    margin-bottom: 2px;
+}
+
+/* Gear Modal Editor */
+.gear-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.gear-modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.gear-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #007BFF;
+}
+
+.gear-modal-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.gear-modal-close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.gear-modal-close:hover {
+    color: #000;
+}
+
+.gear-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.gear-item {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    background-color: #f9f9f9;
+}
+
+.gear-item-header {
+    font-weight: bold;
+    color: #007BFF;
+    margin-bottom: 10px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.gear-item select,
+.gear-item input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.gear-item select:focus,
+.gear-item input:focus {
+    outline: none;
+    border-color: #007BFF;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.gear-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.gear-modal-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.gear-modal-save {
+    background-color: #007BFF;
+    color: white;
+}
+
+.gear-modal-save:hover {
+    background-color: #0056b3;
+}
+
+.gear-modal-cancel {
+    background-color: #6c757d;
+    color: white;
+}
+
+.gear-modal-cancel:hover {
+    background-color: #545b62;
+}
+
+/* Gear display elements in table */
+.gear-display-level {
+    font-weight: bold;
+    color: #007BFF;
+    font-size: 11px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.gear-display-charms {
+    color: #666;
+    font-size: 10px;
+    display: block;
+}
+
+/* Gear cell clickable indicator */
+.gear-cell {
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+.gear-cell:hover {
+    background-color: #f0f8ff;
+}
+
+.gear-cell::after {
+    content: "✏️";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    opacity: 0.6;
+}
+
+.gear-cell:hover::after {
+    opacity: 1;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .gear-modal-content {
+        margin: 10% auto;
+        width: 95%;
+        padding: 15px;
+    }
+    
+    .gear-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .gear-item {
+        padding: 12px;
+    }
+    
+    .gear-modal-actions {
+        flex-direction: column;
+    }
+    
+    .gear-modal-actions button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .gear-modal-content {
+        margin: 5% auto;
+        width: 98%;
+        padding: 10px;
+    }
+    
+    .gear-modal-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}
+
+/* Gear change feedback animation */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Gear grid layout in table */
+.gear-grid-container {
+    padding: 8px;
+    min-width: 300px;
+}
+
+.gear-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+}
+
+.gear-item-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    min-height: 60px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.gear-item-display:hover {
+    background-color: #e9ecef;
+}
+
+.gear-name {
+    font-weight: bold;
+    font-size: 10px;
+    color: #495057;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.gear-display-level {
+    font-weight: bold;
+    color: #007BFF;
+    font-size: 9px;
+    text-align: center;
+    margin-bottom: 1px;
+    line-height: 1.2;
+}
+
+.gear-display-charms {
+    color: #666;
+    font-size: 8px;
+    text-align: center;
+    line-height: 1.1;
+}

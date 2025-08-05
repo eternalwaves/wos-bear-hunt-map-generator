@@ -1,0 +1,10 @@
+<If "%{REQUEST_URI} !~ m#^/public/map.svg#">
+    AuthType Basic
+    AuthName "Protected"
+    AuthUserFile /home4/koinoni6/.htpasswd
+    require valid-user
+</If>
+
+# Rewrite map.svg requests to the API endpoint
+RewriteEngine On
+RewriteRule ^map\.svg$ api.php?action=generate_svg [QSA,L]

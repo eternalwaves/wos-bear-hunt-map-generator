@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bear Hunt Furnace Placement Tool</title>
+    <meta charset="utf-8">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+</head>
+<body>
+    <div id="loader">
+        <div id="spinner"></div>
+    </div>
+    
+    <div class="header">
+        <h1>Bear Hunt Furnace Placement Tool</h1>
+        <div class="user-info">
+            <span id="username"></span>
+            <a href="admin.html" id="adminLink" style="display: none;">User Management</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
+
+    <!-- Map Management -->
+    <h2>Map Management</h2>
+    <form id="createMapForm">
+        <input type="text" name="name" placeholder="Map Name" required>
+        <input type="number" name="cell_size" placeholder="Cell Size (default: 50)" min="10" max="100">
+        <button type="submit">Create New Map</button>
+    </form>
+    
+    <div id="mapSelector" style="display: none;">
+        <label for="mapSelect">Select Map:</label>
+        <select id="mapSelect" onchange="loadSelectedMap()">
+            <option value="">Choose a map...</option>
+        </select>
+        
+        <div id="versionControls" style="display: none;">
+            <label for="versionSelect">Version:</label>
+            <select id="versionSelect" onchange="loadSelectedVersion()">
+                <option value="">Latest</option>
+            </select>
+            
+            <form id="saveVersionForm" style="display: inline;">
+                <input type="text" name="version" placeholder="Version name (e.g., v1.2)" required>
+                <button type="submit">Save Version</button>
+            </form>
+            
+            <button onclick="deleteCurrentVersion()" style="background: #ff4444;">Delete Version</button>
+        </div>
+    </div>
+
+    <!-- Add Traps -->
+    <h2>Add Traps</h2>
+    <form id="addTrapForm">
+        <input type="number" name="x" placeholder="X Coordinate" required>
+        <input type="number" name="y" placeholder="Y Coordinate" required>
+        <button type="submit">Add Trap</button>
+    </form>
+    <table id="trapTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>X</th>
+                <th>Y</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- Add Miscellaneous Objects -->
+    <h2>Add Miscellaneous Object</h2>
+    <form id="addObjectForm">
+        <input type="number" name="x" placeholder="X Coordinate" required>
+        <input type="number" name="y" placeholder="Y Coordinate" required>
+        <input type="number" name="size" placeholder="Size" required min="1">
+        <input type="text" name="name" placeholder="(Optional) Object Name">
+        <button type="submit">Add Object</button>
+    </form>
+    <table id="objectTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>X</th>
+                <th>Y</th>
+                <th>Size</th>
+                <th>Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- Add Furnaces -->
+    <h2>Add Furnace</h2>
+    <form id="addFurnaceForm">
+        <input type="text" name="name" placeholder="Name" required>
+        <input type="text" name="level" placeholder="Level (e.g., FC1, 10, 20)" required>
+        <input type="number" name="power" placeholder="Power" required>
+        <input type="text" name="rank" placeholder="Rank (R1-R5)" required>
+        <input type="number" name="participation" placeholder="Participation">
+        <input type="text" name="trap_pref" placeholder="Trap Preference (number, both, neither)" required>
+        <input type="number" name="x" placeholder="(Optional) X Coordinate">
+        <input type="number" name="y" placeholder="(Optional) Y Coordinate">
+        
+        <!-- Chief Gear Section -->
+        <h3>Chief Gear (Optional)</h3>
+        <div class="gear-section">
+            <div class="gear-row">
+                <select name="cap_level">
+                    <option value="">Select Cap Level</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Uncommon *">Uncommon *</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Rare *">Rare *</option>
+                    <option value="Rare **">Rare **</option>
+                    <option value="Rare ***">Rare ***</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Epic *">Epic *</option>
+                    <option value="Epic **">Epic **</option>
+                    <option value="Epic ***">Epic ***</option>
+                    <option value="Epic T1">Epic T1</option>
+                    <option value="Epic T1 *">Epic T1 *</option>
+                    <option value="Epic T1 **">Epic T1 **</option>
+                    <option value="Epic T1 ***">Epic T1 ***</option>
+                    <option value="Mythic">Mythic</option>
+                    <option value="Mythic *">Mythic *</option>
+                    <option value="Mythic **">Mythic **</option>
+                    <option value="Mythic ***">Mythic ***</option>
+                    <option value="Mythic T1">Mythic T1</option>
+                    <option value="Mythic T1 *">Mythic T1 *</option>
+                    <option value="Mythic T1 **">Mythic T1 **</option>
+                    <option value="Mythic T1 ***">Mythic T1 ***</option>
+                    <option value="Mythic T2">Mythic T2</option>
+                    <option value="Mythic T2 *">Mythic T2 *</option>
+                    <option value="Mythic T2 **">Mythic T2 **</option>
+                    <option value="Mythic T2 ***">Mythic T2 ***</option>
+                    <option value="Legendary">Legendary</option>
+                    <option value="Legendary *">Legendary *</option>
+                    <option value="Legendary **">Legendary **</option>
+                    <option value="Legendary ***">Legendary ***</option>
+                    <option value="Legendary T1">Legendary T1</option>
+                    <option value="Legendary T1 *">Legendary T1 *</option>
+                    <option value="Legendary T1 **">Legendary T1 **</option>
+                    <option value="Legendary T1 ***">Legendary T1 ***</option>
+                    <option value="Legendary T2">Legendary T2</option>
+                    <option value="Legendary T2 *">Legendary T2 *</option>
+                    <option value="Legendary T2 **">Legendary T2 **</option>
+                    <option value="Legendary T2 ***">Legendary T2 ***</option>
+                    <option value="Legendary T3">Legendary T3</option>
+                    <option value="Legendary T3 *">Legendary T3 *</option>
+                    <option value="Legendary T3 **">Legendary T3 **</option>
+                    <option value="Legendary T3 ***">Legendary T3 ***</option>
+                </select>
+                <input type="text" name="cap_charms" placeholder="Cap Charms (e.g., 3,4,3)">
+            </div>
+            <div class="gear-row">
+                <select name="watch_level">
+                    <option value="">Select Watch Level</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Uncommon *">Uncommon *</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Rare *">Rare *</option>
+                    <option value="Rare **">Rare **</option>
+                    <option value="Rare ***">Rare ***</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Epic *">Epic *</option>
+                    <option value="Epic **">Epic **</option>
+                    <option value="Epic ***">Epic ***</option>
+                    <option value="Epic T1">Epic T1</option>
+                    <option value="Epic T1 *">Epic T1 *</option>
+                    <option value="Epic T1 **">Epic T1 **</option>
+                    <option value="Epic T1 ***">Epic T1 ***</option>
+                    <option value="Mythic">Mythic</option>
+                    <option value="Mythic *">Mythic *</option>
+                    <option value="Mythic **">Mythic **</option>
+                    <option value="Mythic ***">Mythic ***</option>
+                    <option value="Mythic T1">Mythic T1</option>
+                    <option value="Mythic T1 *">Mythic T1 *</option>
+                    <option value="Mythic T1 **">Mythic T1 **</option>
+                    <option value="Mythic T1 ***">Mythic T1 ***</option>
+                    <option value="Mythic T2">Mythic T2</option>
+                    <option value="Mythic T2 *">Mythic T2 *</option>
+                    <option value="Mythic T2 **">Mythic T2 **</option>
+                    <option value="Mythic T2 ***">Mythic T2 ***</option>
+                    <option value="Legendary">Legendary</option>
+                    <option value="Legendary *">Legendary *</option>
+                    <option value="Legendary **">Legendary **</option>
+                    <option value="Legendary ***">Legendary ***</option>
+                    <option value="Legendary T1">Legendary T1</option>
+                    <option value="Legendary T1 *">Legendary T1 *</option>
+                    <option value="Legendary T1 **">Legendary T1 **</option>
+                    <option value="Legendary T1 ***">Legendary T1 ***</option>
+                    <option value="Legendary T2">Legendary T2</option>
+                    <option value="Legendary T2 *">Legendary T2 *</option>
+                    <option value="Legendary T2 **">Legendary T2 **</option>
+                    <option value="Legendary T2 ***">Legendary T2 ***</option>
+                    <option value="Legendary T3">Legendary T3</option>
+                    <option value="Legendary T3 *">Legendary T3 *</option>
+                    <option value="Legendary T3 **">Legendary T3 **</option>
+                    <option value="Legendary T3 ***">Legendary T3 ***</option>
+                </select>
+                <input type="text" name="watch_charms" placeholder="Watch Charms (e.g., 3,4,3)">
+            </div>
+            <div class="gear-row">
+                <select name="vest_level">
+                    <option value="">Select Vest Level</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Uncommon *">Uncommon *</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Rare *">Rare *</option>
+                    <option value="Rare **">Rare **</option>
+                    <option value="Rare ***">Rare ***</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Epic *">Epic *</option>
+                    <option value="Epic **">Epic **</option>
+                    <option value="Epic ***">Epic ***</option>
+                    <option value="Epic T1">Epic T1</option>
+                    <option value="Epic T1 *">Epic T1 *</option>
+                    <option value="Epic T1 **">Epic T1 **</option>
+                    <option value="Epic T1 ***">Epic T1 ***</option>
+                    <option value="Mythic">Mythic</option>
+                    <option value="Mythic *">Mythic *</option>
+                    <option value="Mythic **">Mythic **</option>
+                    <option value="Mythic ***">Mythic ***</option>
+                    <option value="Mythic T1">Mythic T1</option>
+                    <option value="Mythic T1 *">Mythic T1 *</option>
+                    <option value="Mythic T1 **">Mythic T1 **</option>
+                    <option value="Mythic T1 ***">Mythic T1 ***</option>
+                    <option value="Mythic T2">Mythic T2</option>
+                    <option value="Mythic T2 *">Mythic T2 *</option>
+                    <option value="Mythic T2 **">Mythic T2 **</option>
+                    <option value="Mythic T2 ***">Mythic T2 ***</option>
+                    <option value="Legendary">Legendary</option>
+                    <option value="Legendary *">Legendary *</option>
+                    <option value="Legendary **">Legendary **</option>
+                    <option value="Legendary ***">Legendary ***</option>
+                    <option value="Legendary T1">Legendary T1</option>
+                    <option value="Legendary T1 *">Legendary T1 *</option>
+                    <option value="Legendary T1 **">Legendary T1 **</option>
+                    <option value="Legendary T1 ***">Legendary T1 ***</option>
+                    <option value="Legendary T2">Legendary T2</option>
+                    <option value="Legendary T2 *">Legendary T2 *</option>
+                    <option value="Legendary T2 **">Legendary T2 **</option>
+                    <option value="Legendary T2 ***">Legendary T2 ***</option>
+                    <option value="Legendary T3">Legendary T3</option>
+                    <option value="Legendary T3 *">Legendary T3 *</option>
+                    <option value="Legendary T3 **">Legendary T3 **</option>
+                    <option value="Legendary T3 ***">Legendary T3 ***</option>
+                </select>
+                <input type="text" name="vest_charms" placeholder="Vest Charms (e.g., 3,4,3)">
+            </div>
+            <div class="gear-row">
+                <select name="pants_level">
+                    <option value="">Select Pants Level</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Uncommon *">Uncommon *</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Rare *">Rare *</option>
+                    <option value="Rare **">Rare **</option>
+                    <option value="Rare ***">Rare ***</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Epic *">Epic *</option>
+                    <option value="Epic **">Epic **</option>
+                    <option value="Epic ***">Epic ***</option>
+                    <option value="Epic T1">Epic T1</option>
+                    <option value="Epic T1 *">Epic T1 *</option>
+                    <option value="Epic T1 **">Epic T1 **</option>
+                    <option value="Epic T1 ***">Epic T1 ***</option>
+                    <option value="Mythic">Mythic</option>
+                    <option value="Mythic *">Mythic *</option>
+                    <option value="Mythic **">Mythic **</option>
+                    <option value="Mythic ***">Mythic ***</option>
+                    <option value="Mythic T1">Mythic T1</option>
+                    <option value="Mythic T1 *">Mythic T1 *</option>
+                    <option value="Mythic T1 **">Mythic T1 **</option>
+                    <option value="Mythic T1 ***">Mythic T1 ***</option>
+                    <option value="Mythic T2">Mythic T2</option>
+                    <option value="Mythic T2 *">Mythic T2 *</option>
+                    <option value="Mythic T2 **">Mythic T2 **</option>
+                    <option value="Mythic T2 ***">Mythic T2 ***</option>
+                    <option value="Legendary">Legendary</option>
+                    <option value="Legendary *">Legendary *</option>
+                    <option value="Legendary **">Legendary **</option>
+                    <option value="Legendary ***">Legendary ***</option>
+                    <option value="Legendary T1">Legendary T1</option>
+                    <option value="Legendary T1 *">Legendary T1 *</option>
+                    <option value="Legendary T1 **">Legendary T1 **</option>
+                    <option value="Legendary T1 ***">Legendary T1 ***</option>
+                    <option value="Legendary T2">Legendary T2</option>
+                    <option value="Legendary T2 *">Legendary T2 *</option>
+                    <option value="Legendary T2 **">Legendary T2 **</option>
+                    <option value="Legendary T2 ***">Legendary T2 ***</option>
+                    <option value="Legendary T3">Legendary T3</option>
+                    <option value="Legendary T3 *">Legendary T3 *</option>
+                    <option value="Legendary T3 **">Legendary T3 **</option>
+                    <option value="Legendary T3 ***">Legendary T3 ***</option>
+                </select>
+                <input type="text" name="pants_charms" placeholder="Pants Charms (e.g., 3,4,3)">
+            </div>
+            <div class="gear-row">
+                <select name="ring_level">
+                    <option value="">Select Ring Level</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Uncommon *">Uncommon *</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Rare *">Rare *</option>
+                    <option value="Rare **">Rare **</option>
+                    <option value="Rare ***">Rare ***</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Epic *">Epic *</option>
+                    <option value="Epic **">Epic **</option>
+                    <option value="Epic ***">Epic ***</option>
+                    <option value="Epic T1">Epic T1</option>
+                    <option value="Epic T1 *">Epic T1 *</option>
+                    <option value="Epic T1 **">Epic T1 **</option>
+                    <option value="Epic T1 ***">Epic T1 ***</option>
+                    <option value="Mythic">Mythic</option>
+                    <option value="Mythic *">Mythic *</option>
+                    <option value="Mythic **">Mythic **</option>
+                    <option value="Mythic ***">Mythic ***</option>
+                    <option value="Mythic T1">Mythic T1</option>
+                    <option value="Mythic T1 *">Mythic T1 *</option>
+                    <option value="Mythic T1 **">Mythic T1 **</option>
+                    <option value="Mythic T1 ***">Mythic T1 ***</option>
+                    <option value="Mythic T2">Mythic T2</option>
+                    <option value="Mythic T2 *">Mythic T2 *</option>
+                    <option value="Mythic T2 **">Mythic T2 **</option>
+                    <option value="Mythic T2 ***">Mythic T2 ***</option>
+                    <option value="Legendary">Legendary</option>
+                    <option value="Legendary *">Legendary *</option>
+                    <option value="Legendary **">Legendary **</option>
+                    <option value="Legendary ***">Legendary ***</option>
+                    <option value="Legendary T1">Legendary T1</option>
+                    <option value="Legendary T1 *">Legendary T1 *</option>
+                    <option value="Legendary T1 **">Legendary T1 **</option>
+                    <option value="Legendary T1 ***">Legendary T1 ***</option>
+                    <option value="Legendary T2">Legendary T2</option>
+                    <option value="Legendary T2 *">Legendary T2 *</option>
+                    <option value="Legendary T2 **">Legendary T2 **</option>
+                    <option value="Legendary T2 ***">Legendary T2 ***</option>
+                    <option value="Legendary T3">Legendary T3</option>
+                    <option value="Legendary T3 *">Legendary T3 *</option>
+                    <option value="Legendary T3 **">Legendary T3 **</option>
+                    <option value="Legendary T3 ***">Legendary T3 ***</option>
+                </select>
+                <input type="text" name="ring_charms" placeholder="Ring Charms (e.g., 3,4,3)">
+            </div>
+            <div class="gear-row">
+                <select name="cane_level">
+                    <option value="">Select Cane Level</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Uncommon *">Uncommon *</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Rare *">Rare *</option>
+                    <option value="Rare **">Rare **</option>
+                    <option value="Rare ***">Rare ***</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Epic *">Epic *</option>
+                    <option value="Epic **">Epic **</option>
+                    <option value="Epic ***">Epic ***</option>
+                    <option value="Epic T1">Epic T1</option>
+                    <option value="Epic T1 *">Epic T1 *</option>
+                    <option value="Epic T1 **">Epic T1 **</option>
+                    <option value="Epic T1 ***">Epic T1 ***</option>
+                    <option value="Mythic">Mythic</option>
+                    <option value="Mythic *">Mythic *</option>
+                    <option value="Mythic **">Mythic **</option>
+                    <option value="Mythic ***">Mythic ***</option>
+                    <option value="Mythic T1">Mythic T1</option>
+                    <option value="Mythic T1 *">Mythic T1 *</option>
+                    <option value="Mythic T1 **">Mythic T1 **</option>
+                    <option value="Mythic T1 ***">Mythic T1 ***</option>
+                    <option value="Mythic T2">Mythic T2</option>
+                    <option value="Mythic T2 *">Mythic T2 *</option>
+                    <option value="Mythic T2 **">Mythic T2 **</option>
+                    <option value="Mythic T2 ***">Mythic T2 ***</option>
+                    <option value="Legendary">Legendary</option>
+                    <option value="Legendary *">Legendary *</option>
+                    <option value="Legendary **">Legendary **</option>
+                    <option value="Legendary ***">Legendary ***</option>
+                    <option value="Legendary T1">Legendary T1</option>
+                    <option value="Legendary T1 *">Legendary T1 *</option>
+                    <option value="Legendary T1 **">Legendary T1 **</option>
+                    <option value="Legendary T1 ***">Legendary T1 ***</option>
+                    <option value="Legendary T2">Legendary T2</option>
+                    <option value="Legendary T2 *">Legendary T2 *</option>
+                    <option value="Legendary T2 **">Legendary T2 **</option>
+                    <option value="Legendary T2 ***">Legendary T2 ***</option>
+                    <option value="Legendary T3">Legendary T3</option>
+                    <option value="Legendary T3 *">Legendary T3 *</option>
+                    <option value="Legendary T3 **">Legendary T3 **</option>
+                    <option value="Legendary T3 ***">Legendary T3 ***</option>
+                </select>
+                <input type="text" name="cane_charms" placeholder="Cane Charms (e.g., 3,4,3)">
+            </div>
+        </div>
+        
+        <button type="submit">Add Furnace</button>
+    </form>
+    
+    <!-- Global datalist for gear levels -->
+    <datalist id="gear-levels">
+        <option value="Uncommon">Uncommon</option>
+        <option value="Uncommon *">Uncommon *</option>
+        <option value="Rare">Rare</option>
+        <option value="Rare *">Rare *</option>
+        <option value="Rare **">Rare **</option>
+        <option value="Rare ***">Rare ***</option>
+        <option value="Epic">Epic</option>
+        <option value="Epic *">Epic *</option>
+        <option value="Epic **">Epic **</option>
+        <option value="Epic ***">Epic ***</option>
+        <option value="Epic T1">Epic T1</option>
+        <option value="Epic T1 *">Epic T1 *</option>
+        <option value="Epic T1 **">Epic T1 **</option>
+        <option value="Epic T1 ***">Epic T1 ***</option>
+        <option value="Mythic">Mythic</option>
+        <option value="Mythic *">Mythic *</option>
+        <option value="Mythic **">Mythic **</option>
+        <option value="Mythic ***">Mythic ***</option>
+        <option value="Mythic T1">Mythic T1</option>
+        <option value="Mythic T1 *">Mythic T1 *</option>
+        <option value="Mythic T1 **">Mythic T1 **</option>
+        <option value="Mythic T1 ***">Mythic T1 ***</option>
+        <option value="Mythic T2">Mythic T2</option>
+        <option value="Mythic T2 *">Mythic T2 *</option>
+        <option value="Mythic T2 **">Mythic T2 **</option>
+        <option value="Mythic T2 ***">Mythic T2 ***</option>
+        <option value="Legendary">Legendary</option>
+        <option value="Legendary *">Legendary *</option>
+        <option value="Legendary **">Legendary **</option>
+        <option value="Legendary ***">Legendary ***</option>
+        <option value="Legendary T1">Legendary T1</option>
+        <option value="Legendary T1 *">Legendary T1 *</option>
+        <option value="Legendary T1 **">Legendary T1 **</option>
+        <option value="Legendary T1 ***">Legendary T1 ***</option>
+        <option value="Legendary T2">Legendary T2</option>
+        <option value="Legendary T2 *">Legendary T2 *</option>
+        <option value="Legendary T2 **">Legendary T2 **</option>
+        <option value="Legendary T2 ***">Legendary T2 ***</option>
+        <option value="Legendary T3">Legendary T3</option>
+        <option value="Legendary T3 *">Legendary T3 *</option>
+        <option value="Legendary T3 **">Legendary T3 **</option>
+        <option value="Legendary T3 ***">Legendary T3 ***</option>
+    </datalist>
+    <!-- Bulk Upload -->
+    <h2>Upload Furnace List</h2>
+    <form id="uploadForm">
+        <h3>Upload Furnace Data</h3>
+        <input type="file" id="csvFile" name="csv_file" accept=".xls,.xlsx,.csv" required>
+        <button type="submit">Upload Excel/CSV</button>
+    </form>
+    <button type="button" onclick="downloadTemplate()">Download Template (Excel)</button>
+    <div class="table-controls">
+        <button type="button" onclick="toggleGearColumns()" id="gearToggleBtn">Show Gear</button>
+    </div>
+    <table id="furnaceTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Level</th>
+                <th>Power</th>
+                <th class="gear-columns" style="display: none;">Chief Gear</th>
+                <th>Rank</th>
+                <th>Participation</th>
+                <th>Trap Pref</th>
+                <th>X</th>
+                <th>Y</th>
+                <th>Shift</th>
+                <th>Actions</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <button id="resetFurnaceBtn" onclick="resetFurnaces()">Reset Furnaces</button>
+    <button id="updateFurnacesBtn" onclick="updateFurnaces()">Update Furnaces</button>
+
+
+    <!-- Sorting Priority Selection -->
+    <h2>Set Sorting Priority</h2>
+    <div class="priority-controls">
+        <div class="priority-mode">
+            <label>
+                <input type="radio" name="priorityMode" value="simple" checked> Simple Priority (Drag to reorder)
+            </label>
+            <label>
+                <input type="radio" name="priorityMode" value="weighted"> Weighted Criteria
+            </label>
+        </div>
+        
+        <!-- Simple Priority Mode -->
+        <div id="simplePriorityMode">
+            <p>Drag items to set priority (top = highest priority)</p>
+            <ol id="sortPriorityList">
+                <li data-value="participation">Participation</li>
+                <li data-value="level">Level</li>
+                <li data-value="rank">Rank</li>
+                <li data-value="power">Power</li>
+            </ol>
+        </div>
+        
+        <!-- Weighted Criteria Mode -->
+        <div id="weightedPriorityMode" style="display: none;">
+            <p>Set weights for each criteria (higher weight = higher priority)</p>
+            <div id="weightedCriteriaList">
+                <div class="criteria-item">
+                    <label>Power:</label>
+                    <input type="range" min="0" max="10" value="1" step="0.1" data-criteria="power" class="weight-slider">
+                    <span class="weight-value">1.0</span>
+                </div>
+                <div class="criteria-item">
+                    <label>Level:</label>
+                    <input type="range" min="0" max="10" value="1" step="0.1" data-criteria="level" class="weight-slider">
+                    <span class="weight-value">1.0</span>
+                </div>
+                <div class="criteria-item">
+                    <label>Rank:</label>
+                    <input type="range" min="0" max="10" value="1" step="0.1" data-criteria="rank" class="weight-slider">
+                    <span class="weight-value">1.0</span>
+                </div>
+                <div class="criteria-item">
+                    <label>Participation:</label>
+                    <input type="range" min="0" max="10" value="1" step="0.1" data-criteria="participation" class="weight-slider">
+                    <span class="weight-value">1.0</span>
+                </div>
+                <div class="criteria-item">
+                    <label>Chief Gear and Charms:</label>
+                    <input type="range" min="0" max="10" value="1" step="0.1" data-criteria="chief_gear_and_charms" class="weight-slider">
+                    <span class="weight-value">1.0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <button onclick="generateMap()" id="generateMapBtn">Generate Map (new positions)</button>
+    <button onclick="downloadCSV()" id="downloadDataBtn" disabled>Download Furnace Data (Excel)</button>
+    <button onclick="downloadSVG()" id="downloadSVGBtn" disabled>Download Map as SVG</button>
+    <button onclick="downloadPNG()" id="downloadPNGBtn" disabled>Download Map as PNG</button>
+    <button onclick="resetData()" id="resetBtn">Reset</button>
+    
+    <!-- Legend -->
+    <div id="mapLegend">
+        <h2>Legend</h2>
+        <ul>
+            <li><span class="assigned"></span> Assigned</li>
+            <li><span class="moved"></span> Moved</li>
+            <li><span class="messaged"></span> Messaged</li>
+            <li><span class="wrong"></span> Wrong Spot</li>
+        </ul>
+    </div>
+
+    <!-- Display SVG -->
+    <div id="map"></div>
+
+    <!-- Gear Editor Modal -->
+    <div id="gearModal" class="gear-modal">
+        <div class="gear-modal-content">
+            <div class="gear-modal-header">
+                <h3 class="gear-modal-title">Edit Chief Gear</h3>
+                <span class="gear-modal-close" onclick="closeGearModal()">&times;</span>
+            </div>
+            <div class="gear-grid" id="gearGrid">
+                <!-- Gear items will be populated by JavaScript -->
+            </div>
+            <div class="gear-modal-actions">
+                <button class="gear-modal-cancel" onclick="closeGearModal()">Cancel</button>
+                <button class="gear-modal-save" onclick="saveGearChanges()">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
