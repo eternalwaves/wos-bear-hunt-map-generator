@@ -1,0 +1,1 @@
+# wos-bear-hunt-map-generator
