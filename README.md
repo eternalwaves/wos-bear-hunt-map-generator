@@ -2,6 +2,15 @@
 
 A comprehensive map management system with RESTful API endpoints, intelligent map generation algorithms, dynamic SVG visualization, advanced furnace management with chief gear properties, and robust user authentication system.
 
+## 💝 **Support This Project**
+
+If you find this project helpful, please consider supporting its development:
+
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?style=for-the-badge&logo=paypal)](https://www.paypal.com/paypalme/ekilrain)
+[![Venmo](https://img.shields.io/badge/Venmo-Donate-green?style=for-the-badge&logo=venmo)](https://venmo.com/theophila)
+
+Your support helps maintain and improve this open-source project! 🚀
+
 ## 🏗️ **Architecture Overview**
 
 This system follows **Clean Architecture** and **Domain-Driven Design (DDD)** principles with clear separation of concerns:
