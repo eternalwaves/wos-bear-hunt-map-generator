@@ -1137,6 +1137,114 @@ class MapServiceTest extends TestCase
         $this->assertEquals(120, $updatedFurnace->getPower());
         $this->assertEquals(30, $updatedFurnace->getX());
         $this->assertEquals(40, $updatedFurnace->getY());
+        $this->assertEquals('both', $updatedFurnace->getTrapPref()); // Should default to 'both'
+    }
+
+    /**
+     * Test that furnace properties are preserved when only coordinates are updated via drag-and-drop
+     * This ensures that when only X/Y coordinates are sent (as in drag-and-drop), all other properties remain unchanged
+     */
+    public function testBulkUpdateFurnacesPreservesPropertiesWhenOnlyCoordinatesUpdated()
+    {
+        $mapId = "map_123";
+        $map = new Map("Test Map", 50);
+        
+        // Create a furnace with all properties set
+        $originalFurnace = new Furnace(
+            'Test Furnace',
+            '2', // level
+            100, // power
+            'R1', // rank
+            100, // participation
+            'both', // trapPref
+            10, // x
+            20, // y
+            'furnace_1', // id
+            'assigned', // status
+            false, // locked
+            'Epic', // capLevel
+            'Rare', // watchLevel
+            'Mythic', // vestLevel
+            'Legendary', // pantsLevel
+            'Epic *', // ringLevel
+            'Rare **', // caneLevel
+            '5,3,8', // capCharms (three comma-separated values)
+            '3,4,5', // watchCharms
+            '8,6,10', // vestCharms
+            '12,8,15', // pantsCharms
+            '6,7,9', // ringCharms
+            '4,5,6' // caneCharms
+        );
+        
+        $map->addFurnace($originalFurnace);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('findById')
+            ->with($mapId)
+            ->willReturn($map);
+
+        $this->mockRepository
+            ->expects($this->once())
+            ->method('save');
+
+        // Act: Update only the coordinates (simulating drag-and-drop)
+        // Note: bulkUpdateFurnaces requires all required fields, so we need to provide them
+        $furnaceUpdates = [
+            [
+                'id' => 'furnace_1',
+                'name' => 'Test Furnace',
+                'level' => '2',
+                'power' => 100,
+                'rank' => 'R1',
+                'participation' => 100,
+                'trap_pref' => 'both',
+                'x' => 15, // Only coordinates changed
+                'y' => 25
+            ]
+        ];
+
+        $this->mapService->bulkUpdateFurnaces($mapId, $furnaceUpdates);
+
+        // Get the updated furnace from the map
+        $updatedFurnace = null;
+        foreach ($map->getFurnaces() as $furnace) {
+            if ($furnace->getId() === 'furnace_1') {
+                $updatedFurnace = $furnace;
+                break;
+            }
+        }
+        
+        $this->assertNotNull($updatedFurnace, 'Updated furnace should be found in map');
+        
+        // Assert: All other properties should be preserved
+        $this->assertEquals('Test Furnace', $updatedFurnace->getName());
+        $this->assertEquals('2', $updatedFurnace->getLevel());
+        $this->assertEquals(100, $updatedFurnace->getPower());
+        $this->assertEquals('R1', $updatedFurnace->getRank());
+        $this->assertEquals(100, $updatedFurnace->getParticipation());
+        $this->assertEquals('both', $updatedFurnace->getTrapPref());
+        $this->assertEquals('assigned', $updatedFurnace->getStatus());
+        $this->assertFalse($updatedFurnace->isLocked());
+        $this->assertEquals('furnace_1', $updatedFurnace->getId());
+        
+        // Gear should be preserved
+        $this->assertEquals('Epic', $updatedFurnace->getCapLevel());
+        $this->assertEquals('Rare', $updatedFurnace->getWatchLevel());
+        $this->assertEquals('Mythic', $updatedFurnace->getVestLevel());
+        $this->assertEquals('Legendary', $updatedFurnace->getPantsLevel());
+        $this->assertEquals('Epic *', $updatedFurnace->getRingLevel());
+        $this->assertEquals('Rare **', $updatedFurnace->getCaneLevel());
+        $this->assertEquals('5,3,8', $updatedFurnace->getCapCharms());
+        $this->assertEquals('3,4,5', $updatedFurnace->getWatchCharms());
+        $this->assertEquals('8,6,10', $updatedFurnace->getVestCharms());
+        $this->assertEquals('12,8,15', $updatedFurnace->getPantsCharms());
+        $this->assertEquals('6,7,9', $updatedFurnace->getRingCharms());
+        $this->assertEquals('4,5,6', $updatedFurnace->getCaneCharms());
+        
+        // Only coordinates should be updated
+        $this->assertEquals(15, $updatedFurnace->getX());
+        $this->assertEquals(25, $updatedFurnace->getY());
     }
 
     // SVG Generation Tests
