@@ -441,6 +441,7 @@ function loadObjects(loadMap = true) {
                 }
                 
                 addLockListeners();
+                setupFurnaceDragAndDrop(); // Setup drag-and-drop for furnaces
             } else {
                 console.error("Error loading objects:", data.message);
             }
@@ -1429,7 +1430,13 @@ function renderSVG(svg) {
     const mapSVG = document.querySelector("#map svg");
     const classes = mapSVG.classList;
     
-    mapSVG.addEventListener('click', () => classes.toggle('zoomed'));
+    //mapSVG.addEventListener('click', () => classes.toggle('zoomed'));
+    
+    // Setup drag-and-drop functionality for furnaces
+    setupFurnaceDragAndDrop();
+    
+    // Add save button if it doesn't exist
+    addMapSaveButton();
 }
 
 // 🚀 Download CSV of Furnaces
@@ -1924,4 +1931,511 @@ function getWeightedCriteria() {
         });
     });
     return criteriaWeights;
+}
+
+// Global variables for drag-and-drop functionality
+let pendingMapChanges = {
+    furnaces: new Map(),
+    misc: new Map(),
+    traps: new Map()
+};
+
+let isDragging = false;
+let draggedElement = null;
+let originalPosition = null;
+
+/**
+ * Setup drag-and-drop functionality for furnaces
+ */
+function setupFurnaceDragAndDrop() {
+    const furnaceElements = document.querySelectorAll('#map svg rect[data-obj-id^="furnace_"]');
+    
+    furnaceElements.forEach(element => {
+        const furnaceId = element.getAttribute('data-obj-id');
+        const furnace = furnaces.find(f => f.id === furnaceId);
+        
+        if (furnace && !furnace.locked) {
+            // Enable drag-and-drop for unlocked furnaces
+            element.style.cursor = 'grab';
+            element.onmousedown = (e) => startFurnaceDrag(e, furnaceId);
+            element.ontouchstart = (e) => startFurnaceDrag(e, furnaceId);
+        } else if (furnace && furnace.locked) {
+            // Disable drag-and-drop for locked furnaces
+            element.style.cursor = 'not-allowed';
+        }
+    });
+}
+
+/**
+ * Start dragging a furnace
+ */
+function startFurnaceDrag(event, furnaceId) {
+    event.preventDefault();
+    
+    const furnace = furnaces.find(f => f.id === furnaceId);
+    if (!furnace || furnace.locked) return;
+    
+    isDragging = true;
+    draggedElement = document.querySelector(`#map svg rect[data-obj-id="${furnaceId}"]`);
+    const coordText = document.querySelector(`#map svg text.coords[data-obj-id="${furnaceId}"]`);
+    
+    // Store original position
+    originalPosition = {
+        x: parseInt(draggedElement.getAttribute('x')),
+        y: parseInt(draggedElement.getAttribute('y')),
+        gridX: furnace.x,
+        gridY: furnace.y
+    };
+    
+    // Add dragging class
+    draggedElement.classList.add('dragging');
+    draggedElement.style.cursor = 'grabbing';
+    
+    // Add event listeners for drag and drop
+    document.addEventListener('mousemove', handleFurnaceDrag);
+    document.addEventListener('touchmove', handleFurnaceDrag);
+    document.addEventListener('mouseup', endFurnaceDrag);
+    document.addEventListener('touchend', endFurnaceDrag);
+    
+    // Also add global event listeners to catch mouse up outside the document
+    window.addEventListener('mouseup', endFurnaceDrag);
+    window.addEventListener('touchend', endFurnaceDrag);
+    
+    // Prevent text selection during drag
+    document.body.style.userSelect = 'none';
+}
+
+/**
+ * Handle furnace dragging
+ */
+function handleFurnaceDrag(event) {
+    if (!isDragging || !draggedElement) return;
+    
+    event.preventDefault();
+    
+    const furnaceId = draggedElement.getAttribute('data-obj-id');
+    const coordText = document.querySelector(`#map svg text.coords[data-obj-id="${furnaceId}"]`);
+    const nameText = document.querySelector(`#map svg text.label[data-obj-id="${furnaceId}"]`);
+    const svg = document.querySelector('#map svg');
+    const svgRect = svg.getBoundingClientRect();
+    
+    // Get mouse/touch position relative to SVG
+    const clientX = event.clientX || (event.touches && event.touches[0].clientX);
+    const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+    
+    const relativeX = clientX - svgRect.left;
+    const relativeY = clientY - svgRect.top;
+    
+    // Get SVG viewBox to properly calculate coordinates
+    const viewBox = svg.getAttribute('viewBox');
+    let viewBoxX = 0, viewBoxY = 0, viewBoxWidth = 0, viewBoxHeight = 0;
+    
+    if (viewBox) {
+        const viewBoxParts = viewBox.split(' ');
+        viewBoxX = parseFloat(viewBoxParts[0]) || 0;
+        viewBoxY = parseFloat(viewBoxParts[1]) || 0;
+        viewBoxWidth = parseFloat(viewBoxParts[2]) || svgRect.width;
+        viewBoxHeight = parseFloat(viewBoxParts[3]) || svgRect.height;
+    } else {
+        viewBoxWidth = svgRect.width;
+        viewBoxHeight = svgRect.height;
+    }
+    
+    // Convert screen coordinates to SVG coordinates
+    const svgCoordX = viewBoxX + (relativeX / svgRect.width) * viewBoxWidth;
+    const svgCoordY = viewBoxY + (relativeY / svgRect.height) * viewBoxHeight;
+    
+    // Convert SVG coordinates to grid coordinates (50px cell size)
+    const gridX = Math.floor(svgCoordX / 50);
+    const gridY = Math.floor(svgCoordY / 50);
+    
+    // Convert to SVG coordinates (viewBox is already in inverted coordinate system)
+    const svgX = gridX * 50;
+    const svgY = gridY * 50; // No additional inversion needed since viewBox handles it
+    
+    // Update SVG element position
+    draggedElement.setAttribute('x', svgX);
+    draggedElement.setAttribute('y', svgY);
+    
+    // Update coordinate text position and content (bottom right, like SvgGenerator)
+    // Display the inverted Y coordinate to match the system
+    coordText.textContent = `(${gridX},${-gridY})`;
+    coordText.setAttribute('x', svgX + 5);
+    coordText.setAttribute('y', svgY + 95); // svgY + 100 - 5
+    coordText.style.fontWeight = 'bold';
+    coordText.style.fontSize = '12px';
+    
+    // Update name text position (center, like SvgGenerator)
+    if (nameText) {
+        nameText.setAttribute('x', svgX + 50);
+        nameText.setAttribute('y', svgY + 50);
+    }
+    
+    // Update table input fields
+    const xField = document.getElementById(`furnace-x-${furnaceId}`);
+    const yField = document.getElementById(`furnace-y-${furnaceId}`);
+    if (xField) xField.value = gridX;
+    if (yField) yField.value = gridY;
+    
+    // Check for collision
+    const hasCollision = isOccupied(originalPosition.gridX, originalPosition.gridY, gridX, gridY, 2);
+    
+    // Update visual feedback
+    draggedElement.classList.remove('collision', 'valid');
+    if (hasCollision) {
+        draggedElement.classList.add('collision');
+        draggedElement.style.stroke = '#FF2A04';
+    } else {
+        draggedElement.classList.add('valid');
+        draggedElement.style.stroke = '#00FF00';
+    }
+}
+
+/**
+ * End furnace dragging
+ */
+function endFurnaceDrag(event) {
+    if (!isDragging || !draggedElement) return;
+    
+    event.preventDefault();
+    
+    const furnaceId = draggedElement.getAttribute('data-obj-id');
+    const coordText = document.querySelector(`#map svg text.coords[data-obj-id="${furnaceId}"]`);
+    const nameText = document.querySelector(`#map svg text.label[data-obj-id="${furnaceId}"]`);
+    const xField = document.getElementById(`furnace-x-${furnaceId}`);
+    const yField = document.getElementById(`furnace-y-${furnaceId}`);
+    
+    // Get final position
+    const finalGridX = parseInt(xField.value);
+    const finalGridY = parseInt(yField.value);
+    
+    // Check for collision
+    const hasCollision = isOccupied(originalPosition.gridX, originalPosition.gridY, finalGridX, finalGridY, 2);
+    
+    if (hasCollision) {
+        // Revert to original position
+        draggedElement.setAttribute('x', originalPosition.x);
+        draggedElement.setAttribute('y', originalPosition.y);
+        coordText.textContent = `(${originalPosition.gridX},${-originalPosition.gridY})`;
+        coordText.setAttribute('x', originalPosition.x + 5);
+        coordText.setAttribute('y', originalPosition.y + 95);
+        if (nameText) {
+            nameText.setAttribute('x', originalPosition.x + 50);
+            nameText.setAttribute('y', originalPosition.y + 50);
+        }
+        xField.value = originalPosition.gridX;
+        yField.value = originalPosition.gridY;
+        alert('Cannot move to occupied space!');
+    } else {
+        // Ensure SVG element is at final position
+        const finalSvgX = finalGridX * 50;
+        const finalSvgY = finalGridY * 50;
+        draggedElement.setAttribute('x', finalSvgX);
+        draggedElement.setAttribute('y', finalSvgY);
+        
+        // Update coordinate text to show final position
+        coordText.textContent = `(${finalGridX},${-finalGridY})`;
+        coordText.setAttribute('x', finalSvgX + 5);
+        coordText.setAttribute('y', finalSvgY + 95);
+        
+        // Update name text position
+        if (nameText) {
+            nameText.setAttribute('x', finalSvgX + 50);
+            nameText.setAttribute('y', finalSvgY + 50);
+        }
+        
+        // Mark as pending change
+        markFurnaceAsPending(furnaceId, originalPosition.x, originalPosition.y, finalGridX, finalGridY);
+        
+        // Update table input fields to match existing system
+        const xField = document.getElementById(`furnace-x-${furnaceId}`);
+        const yField = document.getElementById(`furnace-y-${furnaceId}`);
+        if (xField) {
+            xField.value = finalGridX;
+            xField.setAttribute('data-x', finalGridX);
+        }
+        if (yField) {
+            yField.value = -finalGridY; // Store positive Y coordinate like existing system
+            yField.setAttribute('data-y', finalGridY); // Store actual grid coordinate for backend
+        }
+        
+        // Mark row as unsaved
+        document.getElementById(`furnace-${furnaceId}`).classList.add("unsaved");
+        if (hasMap()) {
+            document.querySelectorAll(`#map svg [data-obj-id="${furnaceId}"]`).forEach((el) => el.classList.add('unsaved'));
+        }
+        
+        // Update occupied positions
+        markNewOccupied(originalPosition.gridX, originalPosition.gridY, finalGridX, finalGridY, 2);
+        
+        // Show save button
+        showMapSaveButton();
+    }
+    
+    // Reset coordinate text styling
+    coordText.style.fontWeight = 'normal';
+    coordText.style.fontSize = '10px';
+    
+    // Clean up
+    draggedElement.classList.remove('dragging', 'collision', 'valid');
+    draggedElement.style.cursor = 'grab';
+    draggedElement.style.stroke = '';
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', handleFurnaceDrag);
+    document.removeEventListener('touchmove', handleFurnaceDrag);
+    document.removeEventListener('mouseup', endFurnaceDrag);
+    document.removeEventListener('touchend', endFurnaceDrag);
+    
+    // Remove global event listeners
+    window.removeEventListener('mouseup', endFurnaceDrag);
+    window.removeEventListener('touchend', endFurnaceDrag);
+    
+    // Reset drag state
+    isDragging = false;
+    draggedElement = null;
+    originalPosition = null;
+    document.body.style.userSelect = '';
+}
+
+/**
+ * Mark a furnace as having pending changes
+ */
+function markFurnaceAsPending(furnaceId, originalSvgX, originalSvgY, newGridX, newGridY) {
+    // Convert SVG coordinates to grid coordinates for the original position
+    const originalGridX = Math.floor(originalSvgX / 50);
+    const originalGridY = Math.floor(originalSvgY / 50);
+    
+    pendingMapChanges.furnaces.set(furnaceId, {
+        originalSvgX: originalSvgX,
+        originalSvgY: originalSvgY,
+        originalGridX: originalGridX,
+        originalGridY: originalGridY,
+        newX: newGridX,
+        newY: newGridY
+    });
+}
+
+/**
+ * Add the map save/discard buttons to the UI
+ */
+function addMapSaveButton() {
+    // Check if buttons already exist
+    if (document.getElementById('mapChangesContainer')) return;
+    
+    const container = document.createElement('div');
+    container.id = 'mapChangesContainer';
+    container.className = 'map-changes-container';
+    container.style.display = 'none';
+    
+    const saveButton = document.createElement('button');
+    saveButton.id = 'saveMapChangesBtn';
+    saveButton.textContent = 'Save Changes';
+    saveButton.className = 'btn btn-primary';
+    saveButton.onclick = saveMapChanges;
+    
+    const discardButton = document.createElement('button');
+    discardButton.id = 'discardMapChangesBtn';
+    discardButton.textContent = 'Discard Changes';
+    discardButton.className = 'btn btn-secondary';
+    discardButton.onclick = discardMapChanges;
+    
+    container.appendChild(saveButton);
+    container.appendChild(discardButton);
+    
+    // Add to the map container
+    const mapContainer = document.getElementById('map');
+    mapContainer.appendChild(container);
+}
+
+/**
+ * Show the map save/discard buttons
+ */
+function showMapSaveButton() {
+    const container = document.getElementById('mapChangesContainer');
+    if (container) {
+        container.style.display = 'block';
+    }
+}
+
+/**
+ * Hide the map save/discard buttons
+ */
+function hideMapSaveButton() {
+    const container = document.getElementById('mapChangesContainer');
+    if (container) {
+        container.style.display = 'none';
+    }
+}
+
+/**
+ * Discard all pending map changes
+ */
+function discardMapChanges() {
+    if (confirm('Are you sure you want to discard all changes? This cannot be undone.')) {
+        // Revert all pending changes
+        for (const [furnaceId, update] of pendingMapChanges.furnaces) {
+            const furnace = furnaces.find(f => f.id === furnaceId);
+            if (furnace) {
+                // Revert to original position
+                const draggedElement = document.querySelector(`#map svg rect[data-obj-id="${furnaceId}"]`);
+                const coordText = document.querySelector(`#map svg text.coords[data-obj-id="${furnaceId}"]`);
+                const nameText = document.querySelector(`#map svg text.label[data-obj-id="${furnaceId}"]`);
+                const xField = document.getElementById(`furnace-x-${furnaceId}`);
+                const yField = document.getElementById(`furnace-y-${furnaceId}`);
+                
+                if (draggedElement) {
+                    // Use stored SVG coordinates for position
+                    const originalSvgX = update.originalSvgX;
+                    const originalSvgY = update.originalSvgY;
+                    
+                    draggedElement.setAttribute('x', originalSvgX);
+                    draggedElement.setAttribute('y', originalSvgY);
+                    
+                    // Use stored grid coordinates for display
+                    const originalGridX = update.originalGridX;
+                    const originalGridY = update.originalGridY;
+                    
+                    if (coordText) {
+                        coordText.textContent = `(${originalGridX},${-originalGridY})`;
+                        coordText.setAttribute('x', originalSvgX + 5);
+                        coordText.setAttribute('y', originalSvgY + 95);
+                    }
+                    
+                    if (nameText) {
+                        nameText.setAttribute('x', originalSvgX + 50);
+                        nameText.setAttribute('y', originalSvgY + 50);
+                    }
+                    
+                    if (xField) {
+                        xField.value = originalGridX;
+                        xField.setAttribute('data-x', originalGridX);
+                    }
+                    if (yField) {
+                        yField.value = -originalGridY; // Store positive Y coordinate like existing system
+                        yField.setAttribute('data-y', originalGridY); // Store actual grid coordinate for backend
+                    }
+                }
+            }
+        }
+        
+        // Clear pending changes
+        pendingMapChanges.furnaces.clear();
+        pendingMapChanges.misc.clear();
+        pendingMapChanges.traps.clear();
+        
+        // Hide buttons
+        hideMapSaveButton();
+        
+        // Clear unsaved indicators
+        clearUnsavedIndicators();
+        
+        alert('Changes discarded successfully!');
+    }
+}
+
+/**
+ * Save all pending map changes
+ */
+async function saveMapChanges() {
+    try {
+        // Save furnace changes
+        if (pendingMapChanges.furnaces.size > 0) {
+            await saveFurnaceChanges();
+        }
+        
+        // Clear pending changes
+        pendingMapChanges.furnaces.clear();
+        pendingMapChanges.misc.clear();
+        pendingMapChanges.traps.clear();
+        
+        // Hide save button
+        hideMapSaveButton();
+        
+        // Clear unsaved indicators
+        clearUnsavedIndicators();
+        
+        // Reload objects to refresh the display
+        loadObjects(false);
+        
+        alert('Map changes saved successfully!');
+    } catch (error) {
+        console.error('Error saving map changes:', error);
+        alert('Error saving map changes: ' + error.message);
+    }
+}
+
+/**
+ * Save furnace changes using existing bulk update endpoint
+ */
+async function saveFurnaceChanges(furnaceUpdates) {
+    let updates = [];
+
+    // Build updates array in the same format as updateFurnaces
+    for (const [furnaceId, update] of pendingMapChanges.furnaces) {
+        const furnace = furnaces.find(f => f.id === furnaceId);
+        if (furnace) {
+            // Get gear data
+            const gearData = {};
+            const gearTypes = ['cap', 'watch', 'vest', 'pants', 'ring', 'cane'];
+            gearTypes.forEach(gearType => {
+                gearData[`${gearType}_level`] = furnace[`${gearType}_level`] || '';
+                gearData[`${gearType}_charms`] = furnace[`${gearType}_charms`] || '';
+            });
+
+            updates.push({ 
+                id: furnace.id, 
+                name: furnace.name, 
+                level: furnace.level, 
+                power: furnace.power, 
+                rank: furnace.rank, 
+                participation: furnace.participation, 
+                trap_pref: furnace.trap_pref, 
+                x: update.newX, 
+                y: -update.newY, // Convert to positive coordinate for backend
+                status: furnace.status, 
+                locked: furnace.locked,
+                ...gearData 
+            });
+        }
+    }
+
+    // Use URLSearchParams to send map_id as form data (same as updateFurnaces)
+    const formData = new FormData();
+    formData.append('furnace_updates', JSON.stringify(updates));
+    formData.append('map_id', currentMapId);
+    if (currentVersion) {
+        formData.append('version', currentVersion);
+    }
+
+    const response = await makeAuthenticatedRequest('api.php?action=update_all_furnaces', {
+        method: 'PUT',
+        body: formData
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to save furnace changes');
+    }
+    
+    return response.json();
+}
+
+/**
+ * Clear all unsaved indicators
+ */
+function clearUnsavedIndicators() {
+    document.querySelectorAll('.unsaved').forEach(element => {
+        element.classList.remove('unsaved');
+    });
+}
+
+/**
+ * Update furnace table row with new coordinates
+ */
+function updateFurnaceTableRow(furnaceId, newX, newY) {
+    const xField = document.getElementById(`furnace-x-${furnaceId}`);
+    const yField = document.getElementById(`furnace-y-${furnaceId}`);
+    
+    if (xField) xField.value = newX;
+    if (yField) yField.value = newY;
 }
