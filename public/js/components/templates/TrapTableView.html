@@ -1,0 +1,42 @@
+<!-- TrapTableView Template -->
+
+<div class="table-header">
+  <h2 class="table-title">Traps</h2>
+  <button class="btn btn-primary" @click=${this._toggleForm}>
+    ${this.showForm ? 'Cancel' : 'Add Trap'}
+  </button>
+</div>
+
+${this.showForm ? html`
+  <trap-form 
+    @trap-submitted=${this._onTrapSubmitted}
+    @form-cancelled=${this._onFormCancelled}>
+  </trap-form>
+` : ''}
+
+<div class="table-container">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>X</th>
+        <th>Y</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${this.traps.length === 0 ? html`
+        <tr>
+          <td colspan="4" class="empty-message">No traps added yet</td>
+        </tr>
+      ` : this.traps.map((trap, index) => html`
+        <trap-table-row 
+          .trap=${trap}
+          .index=${index}
+          @trap-edit=${this._onTrapEdit}
+          @trap-delete=${this._onTrapDelete}>
+        </trap-table-row>
+      `)}
+    </tbody>
+  </table>
+</div>

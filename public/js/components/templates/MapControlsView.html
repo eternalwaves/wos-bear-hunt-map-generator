@@ -1,0 +1,40 @@
+<!-- MapControlsView Template -->
+<div class="controls-container">
+  <div class="control-buttons">
+    <button 
+      class="btn btn-primary" 
+      @click=${this._onGenerateMap}
+      ?disabled=${!this.hasData}
+    >
+      Generate Map
+    </button>
+    
+    ${this.mapGenerated ? html`
+      <button class="btn btn-secondary" @click=${this._onDownloadCSV}>Download CSV</button>
+      <button class="btn btn-secondary" @click=${this._onDownloadSVG}>Download SVG</button>
+      <button class="btn btn-secondary" @click=${this._onDownloadPNG}>Download PNG</button>
+    ` : ''}
+    
+    <button 
+      class="btn btn-danger" 
+      @click=${this._onResetData}
+      ?disabled=${!this.hasData}
+    >
+      Reset Data
+    </button>
+  </div>
+  
+  ${this.mapGenerated ? html`
+    <div class="status-message success">
+      Map generated successfully!
+    </div>
+  ` : this.hasData ? html`
+    <div class="status-message info">
+      Data ready. Click "Generate Map" to create the layout.
+    </div>
+  ` : html`
+    <div class="status-message warning">
+      No data available. Add furnaces, traps, and objects first.
+    </div>
+  `}
+</div>

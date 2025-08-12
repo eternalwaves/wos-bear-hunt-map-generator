@@ -1,0 +1,77 @@
+<div class="login-container">
+  <div class="login-header">
+    <h1 class="login-title">Login</h1>
+    <p class="login-subtitle">Sign in to your account</p>
+  </div>
+
+  <form id="loginForm">
+    <div class="form-group">
+      <label class="form-label" for="username">Username</label>
+      <input 
+        type="text" 
+        id="username"
+        class="form-input"
+        placeholder="Enter your username"
+        required
+      >
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">Password</label>
+      <input 
+        type="password" 
+        id="password"
+        class="form-input"
+        placeholder="Enter your password"
+        required
+      >
+    </div>
+
+    <div class="error-message" id="errorMessage" style="display: none;">
+      Error message will appear here
+    </div>
+
+    <button 
+      type="submit" 
+      class="btn btn-primary"
+      id="submitBtn"
+    >
+      Sign In
+    </button>
+  </form>
+
+  <div class="otp-section" id="otpSection" style="display: none;">
+    <div class="otp-title">Two-Factor Authentication</div>
+    <div class="otp-help">
+      Please enter the OTP code sent to your email address.
+    </div>
+    
+    <form id="otpForm">
+      <div class="form-group">
+        <label class="form-label" for="otp">OTP Code</label>
+        <input 
+          type="text" 
+          id="otp"
+          class="form-input"
+          placeholder="Enter OTP code"
+          required
+          maxlength="6"
+        >
+      </div>
+
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        id="otpSubmitBtn"
+      >
+        Verify OTP
+      </button>
+    </form>
+  </div>
+
+  <div class="login-footer">
+    <a href="/reset-password.php" class="footer-link">Forgot Password?</a>
+    <br>
+    <a href="/register.html" class="footer-link">Don't have an account? Register</a>
+  </div>
+</div>

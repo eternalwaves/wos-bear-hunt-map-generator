@@ -1,0 +1,102 @@
+<!-- FurnaceTableRow Template -->
+
+<tr>
+  <td>${this.index + 1}</td>
+<td>${this.furnace.getName()}</td>
+<td>${this.furnace.getLevel()}</td>
+<td>${this.furnace.getPower()}</td>
+
+<td class="gear-columns ${this.showGearColumns ? 'show' : ''}">
+  <gear-cell
+    .level=${this.furnace.getCapLevel()}
+    .charms=${this.furnace.getCapCharms()}
+    .gearType="cap"
+    .furnaceId=${this.furnace.getId()}
+    @gear-click=${this._onGearClick}
+  ></gear-cell>
+</td>
+
+<td class="gear-columns ${this.showGearColumns ? 'show' : ''}">
+  <gear-cell
+    .level=${this.furnace.getWatchLevel()}
+    .charms=${this.furnace.getWatchCharms()}
+    .gearType="watch"
+    .furnaceId=${this.furnace.getId()}
+    @gear-click=${this._onGearClick}
+  ></gear-cell>
+</td>
+
+<td class="gear-columns ${this.showGearColumns ? 'show' : ''}">
+  <gear-cell
+    .level=${this.furnace.getVestLevel()}
+    .charms=${this.furnace.getVestCharms()}
+    .gearType="vest"
+    .furnaceId=${this.furnace.getId()}
+    @gear-click=${this._onGearClick}
+  ></gear-cell>
+</td>
+
+<td class="gear-columns ${this.showGearColumns ? 'show' : ''}">
+  <gear-cell
+    .level=${this.furnace.getPantsLevel()}
+    .charms=${this.furnace.getPantsCharms()}
+    .gearType="pants"
+    .furnaceId=${this.furnace.getId()}
+    @gear-click=${this._onGearClick}
+  ></gear-cell>
+</td>
+
+<td class="gear-columns ${this.showGearColumns ? 'show' : ''}">
+  <gear-cell
+    .level=${this.furnace.getRingLevel()}
+    .charms=${this.furnace.getRingCharms()}
+    .gearType="ring"
+    .furnaceId=${this.furnace.getId()}
+    @gear-click=${this._onGearClick}
+  ></gear-cell>
+</td>
+
+<td class="gear-columns ${this.showGearColumns ? 'show' : ''}">
+  <gear-cell
+    .level=${this.furnace.getCaneLevel()}
+    .charms=${this.furnace.getCaneCharms()}
+    .gearType="cane"
+    .furnaceId=${this.furnace.getId()}
+    @gear-click=${this._onGearClick}
+  ></gear-cell>
+</td>
+
+<td>${this.furnace.getRank()}</td>
+<td>${this.furnace.getParticipation() || '-'}</td>
+<td>${this.furnace.getTrapPref()}</td>
+<td>${this.furnace.getX() || '-'}</td>
+<td>${this.furnace.getY() || '-'}</td>
+
+<td class="status-cell ${this._getStatusClass()}">
+  ${this._getStatusText()}
+</td>
+
+<td class="actions-cell">
+  <button 
+    class="btn btn-gear"
+    @click=${this._onGearEdit}
+    title="Edit Chief Gear"
+  >
+    Gear
+  </button>
+  <button 
+    class="btn btn-edit"
+    @click=${this._onEdit}
+    title="Edit Furnace"
+  >
+    Edit
+  </button>
+  <button 
+    class="btn btn-delete"
+    @click=${this._onDelete}
+    title="Delete Furnace"
+  >
+    Delete
+  </button>
+</td>
+</tr>

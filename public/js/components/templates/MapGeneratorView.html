@@ -1,0 +1,87 @@
+<!-- MapGeneratorView Template -->
+
+<div class="header">
+  <h1>Bear Hunt Map Generator</h1>
+  <p>Manage your map objects and generate optimized layouts</p>
+</div>
+
+<!-- Map Management -->
+<map-management-view
+  .maps=${this.maps}
+  .currentMap=${this.currentMap}
+  .currentVersion=${this.currentVersion}
+  @map-created=${this._onMapCreated}
+  @map-selected=${this._onMapSelected}
+  @version-selected=${this._onVersionSelected}
+  @version-saved=${this._onVersionSaved}
+  @version-deleted=${this._onVersionDeleted}
+></map-management-view>
+
+${this.currentMap ? html`
+  <!-- Add Traps -->
+  <trap-table-view
+    .map=${this.currentMap}
+    @trap-added=${this._onTrapAdded}
+    @trap-deleted=${this._onTrapDeleted}
+  ></trap-table-view>
+
+  <!-- Add Miscellaneous Objects -->
+  <misc-object-table-view
+    .map=${this.currentMap}
+    @object-added=${this._onObjectAdded}
+    @object-deleted=${this._onObjectDeleted}
+  ></misc-object-table-view>
+
+  <!-- Add Furnaces -->
+  <furnace-form-view
+    @furnace-added=${this._onFurnaceAdded}
+  ></furnace-form-view>
+
+  <!-- Bulk Upload -->
+  <bulk-upload-view
+    @furnaces-uploaded=${this._onFurnacesUploaded}
+  ></bulk-upload-view>
+
+  <!-- Furnace Table -->
+  <furnace-table-view
+    .map=${this.currentMap}
+    @furnace-added=${this._onFurnaceAdded}
+    @furnace-updated=${this._onFurnaceUpdated}
+    @furnace-deleted=${this._onFurnaceDeleted}
+  ></furnace-table-view>
+
+  <!-- Sorting Priority Selection -->
+  <priority-selection-view
+    @priority-changed=${this._onPriorityChanged}
+  ></priority-selection-view>
+
+  <!-- Controls -->
+  <map-controls-view
+    .mapGenerated=${this.mapGenerated}
+    .hasData=${this.hasData}
+    @generate-map=${this._onGenerateMap}
+    @download-csv=${this._onDownloadCSV}
+    @download-svg=${this._onDownloadSVG}
+    @download-png=${this._onDownloadPNG}
+    @reset-data=${this._onResetData}
+  ></map-controls-view>
+
+  <!-- Legend -->
+  <map-legend-view></map-legend-view>
+
+  <!-- Map Display -->
+  <map-display-view
+    .map=${this.currentMap}
+    .version=${this.currentVersion}
+    .svgContent=${this.svgContent}
+  ></map-display-view>
+` : html`
+  <div class="loading">
+    <h2>Please select a map to begin</h2>
+  </div>
+`}
+
+<gear-modal
+  id="gearModal"
+  @gear-saved=${this._onGearSaved}
+></gear-modal> 

@@ -1,0 +1,72 @@
+/* GearItem Styles */
+:host {
+  display: block;
+}
+
+.gear-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-input,
+.form-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-input::placeholder {
+  color: #adb5bd;
+}
+
+.charms-help {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+.gear-preview {
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.preview-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 6px;
+}
+
+.preview-content {
+  font-size: 13px;
+  color: #666;
+}
+
+.preview-empty {
+  font-style: italic;
+  color: #adb5bd;
+}

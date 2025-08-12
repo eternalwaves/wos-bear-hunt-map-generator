@@ -1,0 +1,57 @@
+/* GearCell Styles */
+:host {
+  display: block;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  min-height: 20px;
+}
+
+:host(:hover) {
+  background-color: #f8f9fa;
+}
+
+.gear-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gear-level {
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.gear-charms {
+  font-size: 10px;
+  color: #6c757d;
+}
+
+.gear-empty {
+  color: #adb5bd;
+  font-style: italic;
+  font-size: 11px;
+}
+
+/* Gear level color coding */
+.level-uncommon { color: #28a745; }
+.level-rare { color: #17a2b8; }
+.level-epic { color: #6f42c1; }
+.level-mythic { color: #fd7e14; }
+.level-legendary { color: #dc3545; }
+
+/* Charm level indicators */
+.charms-high {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.charms-medium {
+  color: #ffc107;
+}
+
+.charms-low {
+  color: #dc3545;
+}

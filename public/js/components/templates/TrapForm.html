@@ -1,0 +1,34 @@
+<!-- TrapForm Template -->
+<div class="form-container">
+  <h3>Add New Trap</h3>
+  <form @submit=${this._onSubmit}>
+    <div class="form-group">
+      <label for="x-coord">X Coordinate:</label>
+      <input 
+        type="number" 
+        id="x-coord"
+        .value=${this.x || ''}
+        @input=${this._onXChange}
+        required
+        min="0"
+      >
+    </div>
+    
+    <div class="form-group">
+      <label for="y-coord">Y Coordinate:</label>
+      <input 
+        type="number" 
+        id="y-coord"
+        .value=${this.y || ''}
+        @input=${this._onYChange}
+        required
+        min="0"
+      >
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Add Trap</button>
+      <button type="button" class="btn btn-secondary" @click=${this._onCancel}>Cancel</button>
+    </div>
+  </form>
+</div>

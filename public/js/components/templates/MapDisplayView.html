@@ -1,0 +1,23 @@
+<!-- MapDisplayView Template -->
+<div class="map-display-container">
+  <h3>Generated Map</h3>
+  
+  <div class="map-content">
+    ${this.svgContent ? html`
+      <div class="svg-container">
+        ${unsafeHTML(this.svgContent)}
+      </div>
+    ` : html`
+      <div class="no-map-message">
+        <p>No map generated yet. Add furnaces, traps, and objects, then click "Generate Map".</p>
+      </div>
+    `}
+  </div>
+  
+  ${this.svgContent ? html`
+    <div class="map-actions">
+      <button class="btn btn-secondary" @click=${this._onDownloadSVG}>Download SVG</button>
+      <button class="btn btn-secondary" @click=${this._onDownloadPNG}>Download PNG</button>
+    </div>
+  ` : ''}
+</div>

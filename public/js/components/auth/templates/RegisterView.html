@@ -1,0 +1,70 @@
+<!-- RegisterView Template -->
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>Create Account</h2>
+    
+    ${this.errorMessage ? html`
+      <div class="error-message">${this.errorMessage}</div>
+    ` : ''}
+    
+    ${this.successMessage ? html`
+      <div class="success-message">${this.successMessage}</div>
+    ` : ''}
+    
+    <form @submit=${this._onSubmit}>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input 
+          type="text" 
+          id="username"
+          .value=${this.username}
+          @input=${this._onUsernameChange}
+          required
+          minlength="3"
+          maxlength="50"
+        >
+      </div>
+      
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email"
+          .value=${this.email}
+          @input=${this._onEmailChange}
+          required
+        >
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password"
+          .value=${this.password}
+          @input=${this._onPasswordChange}
+          required
+          minlength="8"
+        >
+      </div>
+      
+      <div class="form-group">
+        <label for="confirm-password">Confirm Password</label>
+        <input 
+          type="password" 
+          id="confirm-password"
+          .value=${this.confirmPassword}
+          @input=${this._onConfirmPasswordChange}
+          required
+          minlength="8"
+        >
+      </div>
+      
+      <button type="submit" class="btn btn-primary">Create Account</button>
+    </form>
+    
+    <div class="auth-links">
+      <a href="login.html">Already have an account? Sign in</a>
+    </div>
+  </div>
+</div>

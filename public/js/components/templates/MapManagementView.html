@@ -1,0 +1,28 @@
+<h2>Map Management</h2>
+
+<form id="createMapForm">
+  <input type="text" name="name" placeholder="Map Name" required>
+  <input type="number" name="cell_size" placeholder="Cell Size (default: 50)" min="10" max="100">
+  <button type="submit">Create New Map</button>
+</form>
+
+<div id="mapSelector">
+  <label for="mapSelect">Select Map:</label>
+  <select id="mapSelect">
+    <option value="">Choose a map...</option>
+  </select>
+  
+  <div id="versionControls">
+    <label for="versionSelect">Version:</label>
+    <select id="versionSelect">
+      <option value="">Latest</option>
+    </select>
+    
+    <form id="saveVersionForm" style="display: inline;">
+      <input type="text" name="version" placeholder="Version name (e.g., v1.2)" required>
+      <button type="submit">Save Version</button>
+    </form>
+    
+    <button onclick="deleteCurrentVersion()" style="background: #ff4444;">Delete Version</button>
+  </div>
+</div>

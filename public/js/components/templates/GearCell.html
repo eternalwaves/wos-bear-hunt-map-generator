@@ -1,0 +1,20 @@
+<!-- GearCell Template -->
+${!this.level && !this.charms ? html`
+  <div class="gear-content">
+    <span class="gear-empty">No gear</span>
+  </div>
+` : html`
+  <div class="gear-content" @click=${this._onClick}>
+  ${this.level ? html`
+    <span class="gear-level ${this._getLevelClass()}">
+      ${this.level}
+    </span>
+  ` : ''}
+  
+  ${this.charms ? html`
+    <span class="gear-charms ${this._getCharmsClass()}">
+          ${this._formatCharms()}
+  </span>
+` : ''}
+  </div>
+`}

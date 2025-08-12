@@ -1,0 +1,90 @@
+<!-- GearModal Template -->
+<div class="modal-overlay ${this.visible ? 'visible' : ''}" @click=${this._onOverlayClick}>
+  <div class="modal-content" @click=${this._onContentClick}>
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Chief Gear</h3>
+      <button class="modal-close" @click=${this._onClose}>&times;</button>
+    </div>
+
+    <div class="modal-body">
+      ${this.furnace ? html`
+        <div class="furnace-info">
+          <div class="furnace-name">${this.furnace.getName()}</div>
+          <div class="furnace-details">
+            <div>Level: ${this.furnace.getLevel()}</div>
+            <div>Power: ${this.furnace.getPower()}</div>
+            <div>Rank: ${this.furnace.getRank()}</div>
+            <div>Participation: ${this.furnace.getParticipation() || 'N/A'}</div>
+          </div>
+        </div>
+
+        <div class="gear-grid">
+          <div class="gear-section">
+            <h4 class="gear-section-title">Cap</h4>
+            <gear-item
+              .level=${this.gearData.cap.level}
+              .charms=${this.gearData.cap.charms}
+              .gearType="cap"
+              @gear-changed=${this._onGearChanged}
+            ></gear-item>
+          </div>
+
+          <div class="gear-section">
+            <h4 class="gear-section-title">Watch</h4>
+            <gear-item
+              .level=${this.gearData.watch.level}
+              .charms=${this.gearData.watch.charms}
+              .gearType="watch"
+              @gear-changed=${this._onGearChanged}
+            ></gear-item>
+          </div>
+
+          <div class="gear-section">
+            <h4 class="gear-section-title">Vest</h4>
+            <gear-item
+              .level=${this.gearData.vest.level}
+              .charms=${this.gearData.vest.charms}
+              .gearType="vest"
+              @gear-changed=${this._onGearChanged}
+            ></gear-item>
+          </div>
+
+          <div class="gear-section">
+            <h4 class="gear-section-title">Pants</h4>
+            <gear-item
+              .level=${this.gearData.pants.level}
+              .charms=${this.gearData.pants.charms}
+              .gearType="pants"
+              @gear-changed=${this._onGearChanged}
+            ></gear-item>
+          </div>
+
+          <div class="gear-section">
+            <h4 class="gear-section-title">Ring</h4>
+            <gear-item
+              .level=${this.gearData.ring.level}
+              .charms=${this.gearData.ring.charms}
+              .gearType="ring"
+              @gear-changed=${this._onGearChanged}
+            ></gear-item>
+          </div>
+
+          <div class="gear-section">
+            <h4 class="gear-section-title">Cane</h4>
+            <gear-item
+              .level=${this.gearData.cane.level}
+              .charms=${this.gearData.cane.charms}
+              .gearType="cane"
+              @gear-changed=${this._onGearChanged}
+            ></gear-item>
+          </div>
+        </div>
+      ` : ''}
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-cancel" @click=${this._onClose}>Cancel</button>
+      <button class="btn btn-save" @click=${this._onSave}>Apply Changes</button>
+    </div>
+  </div>
+</div> 

@@ -1,0 +1,44 @@
+<!-- MiscObjectTableView Template -->
+
+<div class="table-header">
+  <h2 class="table-title">Miscellaneous Objects</h2>
+  <button class="btn btn-primary" @click=${this._toggleForm}>
+    ${this.showForm ? 'Cancel' : 'Add Object'}
+  </button>
+</div>
+
+${this.showForm ? html`
+  <misc-object-form 
+    @misc-object-submitted=${this._onMiscObjectSubmitted}
+    @form-cancelled=${this._onFormCancelled}>
+  </misc-object-form>
+` : ''}
+
+<div class="table-container">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>X</th>
+        <th>Y</th>
+        <th>Size</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${this.miscObjects.length === 0 ? html`
+        <tr>
+          <td colspan="6" class="empty-message">No miscellaneous objects added yet</td>
+        </tr>
+      ` : this.miscObjects.map((miscObject, index) => html`
+        <misc-object-table-row 
+          .miscObject=${miscObject}
+          .index=${index}
+          @misc-object-edit=${this._onMiscObjectEdit}
+          @misc-object-delete=${this._onMiscObjectDelete}>
+        </misc-object-table-row>
+      `)}
+    </tbody>
+  </table>
+</div>
