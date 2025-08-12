@@ -1,7 +1,5 @@
-import { LitElement, html, css, unsafeCSS } from 'https://esm.sh/lit@2.7.0';
-import { unsafeHTML } from 'https://esm.sh/lit@2.7.0/directives/unsafe-html.js';
-import { TemplateLoader } from '../utils/templateLoader.js';
-import { GearCellLogic } from './logic/GearCell.js';
+import { LitElement, html, css } from 'https://esm.sh/lit@2.7.0';
+import { GearCellTemplate } from './templates/GearCellTemplate.js';
 
 export class GearCell extends LitElement {
   static properties = {
@@ -13,48 +11,92 @@ export class GearCell extends LitElement {
 
   constructor() {
     super();
-    this.level = null;
-    this.charms = null;
+    this.level = '';
+    this.charms = '';
     this.gearType = '';
     this.furnaceId = '';
-    this.logic = new GearCellLogic(this);
-    this.templateString = '';
-    this.cssString = '';
   }
 
-  static styles = css`/* Default styles - will be overridden by loaded CSS */ :host { display: block; }`;
-
-  async connectedCallback() {
-    super.connectedCallback();
-    await this._loadTemplates();
-  }
-
-  async _loadTemplates() {
-    // Load HTML template and CSS separately
-    this.templateString = await TemplateLoader.loadTemplate('/js/components/templates/GearCell.html');
-    this.cssString = await TemplateLoader.loadCSS('/js/components/styles/GearCell.css');
-    this.staticStyles = css`${unsafeCSS(this.cssString)}`;
-  }
+  static styles = css`
+    :host {
+      display: block;
+    }
+    
+    .gear-cell {
+      font-size: 12px;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 2px;
+      vertical-align: top;
+      cursor: pointer;
+      position: relative;
+      transition: background-color 0.2s;
+    }
+    
+    .gear-cell:hover {
+      background-color: #f0f8ff;
+    }
+    
+    .gear-cell::after {
+      content: "✏️";
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 10px;
+      opacity: 0.6;
+    }
+    
+    .gear-cell:hover::after {
+      opacity: 1;
+    }
+    
+    .gear-level {
+      font-weight: bold;
+      color: #007BFF;
+      font-size: 11px;
+      display: block;
+      margin-bottom: 2px;
+    }
+    
+    .gear-charms {
+      color: #666;
+      font-size: 10px;
+      display: block;
+    }
+    
+    .gear-cell .gear-level,
+    .gear-cell .gear-charms {
+      margin-bottom: 2px;
+    }
+  `;
 
   render() {
-    // Use the loaded template string
-    return html`${unsafeHTML(this.templateString)}`;
+    return GearCellTemplate(this);
   }
 
   _getLevelClass() {
-    return this.logic.getLevelClass();
+    return this.level ? 'has-level' : 'no-level';
   }
 
   _getCharmsClass() {
-    return this.logic.getCharmsClass();
+    return this.charms ? 'has-charms' : 'no-charms';
   }
 
   _formatCharms() {
-    return this.logic.formatCharms();
+    return this.charms || '-';
   }
 
   _onClick() {
-    this.logic.onClick();
+    this.dispatchEvent(new CustomEvent('gear-click', {
+      detail: {
+        gearType: this.gearType,
+        furnaceId: this.furnaceId,
+        level: this.level,
+        charms: this.charms
+      }
+    }));
   }
 }
 

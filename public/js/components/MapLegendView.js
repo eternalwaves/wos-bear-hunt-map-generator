@@ -1,38 +1,47 @@
-import { LitElement, html, css, unsafeCSS } from 'https://esm.sh/lit@2.7.0';
-import { unsafeHTML } from 'https://esm.sh/lit@2.7.0/directives/unsafe-html.js';
-import { TemplateLoader } from '../utils/templateLoader.js';
-import { MapLegendViewLogic } from './logic/MapLegendView.js';
+import { LitElement, html, css } from 'https://esm.sh/lit@2.7.0';
+import { MapLegendViewTemplate } from './templates/MapLegendViewTemplate.js';
 
 export class MapLegendView extends LitElement {
-  constructor() {
-    super();
-    this.logic = new MapLegendViewLogic(this);
-    this.templateString = '';
-    this.cssString = '';
-  }
-
   static styles = css`
-    /* Default styles - will be overridden by loaded CSS */
     :host {
       display: block;
     }
+    
+    .map-legend {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .map-legend h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+    
+    .legend-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+    }
   `;
 
-  async connectedCallback() {
-    super.connectedCallback();
-    await this._loadTemplates();
-  }
-
-  async _loadTemplates() {
-    // Load HTML template and CSS separately
-    this.templateString = await TemplateLoader.loadTemplate('/js/components/templates/MapLegendView.html');
-    this.cssString = await TemplateLoader.loadCSS('/js/components/styles/MapLegendView.css');
-    this.staticStyles = css`${unsafeCSS(this.cssString)}`;
-  }
-
   render() {
-    // Use the loaded template string
-    return html`${unsafeHTML(this.templateString)}`;
+    return MapLegendViewTemplate(this);
   }
 }
 

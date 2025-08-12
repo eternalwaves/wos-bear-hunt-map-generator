@@ -1,4 +1,4 @@
-export class MapControlsViewLogic {
+﻿export class MapControlsViewLogic {
   constructor(component) {
     this.component = component;
   }

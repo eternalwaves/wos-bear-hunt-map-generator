@@ -6,112 +6,63 @@ export class MiscObjectTableViewLogic {
     this.component = component;
   }
 
-  toggleForm() {
-    this.component.showForm = !this.component.showForm;
-    this.component.requestUpdate();
+  updateMiscObjectsFromMap() {
+    // This method is called when the miscObjects property changes
+    // The misc objects are already set on the component
+    // No additional processing needed since we're using the miscObjects array directly
   }
 
-  async onMiscObjectSubmitted(event) {
-    const miscObjectData = event.detail;
-    const miscObject = new MiscObject(
-      miscObjectData.x, 
-      miscObjectData.y, 
-      miscObjectData.size, 
-      miscObjectData.name
-    );
-    
-    try {
-      const response = await fetch('/api.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'add_misc_object',
-          map_id: this.component.map.getId(),
-          misc_object: miscObject.toArray()
-        })
-      });
+  toggleForm() {
+    this.component.showForm = !this.component.showForm;
+  }
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          this.component.miscObjects.push(miscObject);
-          this.component.showForm = false;
-          this.component.requestUpdate();
-          
-          this.component.dispatchEvent(new CustomEvent('misc-object-added', {
-            detail: { miscObject }
-          }));
-        } else {
-          alert('Failed to add miscellaneous object: ' + result.message);
-        }
-      } else {
-        alert('Failed to add miscellaneous object');
-      }
-    } catch (error) {
-      console.error('Error adding miscellaneous object:', error);
-      alert('Error adding miscellaneous object');
-    }
+  onMiscObjectSubmitted(event) {
+    // Handle misc object form submission
+    console.log('Misc object submitted:', event.detail);
+    this.component.showForm = false;
+    
+    // Dispatch event to parent
+    this.component.dispatchEvent(new CustomEvent('misc-object-added', {
+      detail: event.detail
+    }));
   }
 
   onFormCancelled() {
     this.component.showForm = false;
-    this.component.requestUpdate();
   }
 
-  async onMiscObjectEdit(event) {
-    const miscObject = event.detail;
-    // Handle misc object editing - could open a modal or form
-    this.component.dispatchEvent(new CustomEvent('misc-object-edit', {
-      detail: { miscObject }
+  onMiscObjectUpdated(event) {
+    // Handle misc object update
+    console.log('Misc object updated:', event.detail);
+    
+    // Dispatch event to parent
+    this.component.dispatchEvent(new CustomEvent('misc-object-updated', {
+      detail: event.detail
     }));
   }
 
-  async onMiscObjectDelete(event) {
-    const miscObject = event.detail;
+  onMiscObjectDeleted(event) {
+    // Handle misc object deletion
+    console.log('Misc object deleted:', event.detail);
     
-    try {
-      const response = await fetch('/api.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete_misc_object',
-          map_id: this.component.map.getId(),
-          misc_object_id: miscObject.getId()
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          const index = this.component.miscObjects.findIndex(m => m.getId() === miscObject.getId());
-          if (index > -1) {
-            this.component.miscObjects.splice(index, 1);
-            this.component.requestUpdate();
-          }
-          
-          this.component.dispatchEvent(new CustomEvent('misc-object-deleted', {
-            detail: { miscObject }
-          }));
-        } else {
-          alert('Failed to delete miscellaneous object: ' + result.message);
-        }
-      } else {
-        alert('Failed to delete miscellaneous object');
-      }
-    } catch (error) {
-      console.error('Error deleting miscellaneous object:', error);
-      alert('Error deleting miscellaneous object');
-    }
+    // Dispatch event to parent
+    this.component.dispatchEvent(new CustomEvent('misc-object-deleted', {
+      detail: event.detail
+    }));
   }
 
-  updateMiscObjectsFromMap() {
-    if (this.component.map) {
-      this.component.miscObjects = this.component.map.getMiscObjects();
-      this.component.requestUpdate();
+  // Row-level methods
+  onEdit(object) {
+    this.component.dispatchEvent(new CustomEvent('misc-object-edit', {
+      detail: object
+    }));
+  }
+
+  onDelete(object) {
+    if (confirm(`Are you sure you want to delete this object?`)) {
+      this.component.dispatchEvent(new CustomEvent('misc-object-deleted', {
+        detail: object
+      }));
     }
   }
 }

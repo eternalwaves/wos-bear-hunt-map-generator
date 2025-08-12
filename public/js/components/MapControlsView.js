@@ -1,7 +1,5 @@
-import { LitElement, html, css, unsafeCSS } from 'https://esm.sh/lit@2.7.0';
-import { unsafeHTML } from 'https://esm.sh/lit@2.7.0/directives/unsafe-html.js';
-import { TemplateLoader } from '../utils/templateLoader.js';
-import { MapControlsViewLogic } from './logic/MapControlsView.js';
+import { LitElement, html, css } from 'https://esm.sh/lit@2.7.0';
+import { MapControlsViewTemplate } from './templates/MapControlsViewTemplate.js';
 
 export class MapControlsView extends LitElement {
   static properties = {
@@ -13,53 +11,77 @@ export class MapControlsView extends LitElement {
     super();
     this.mapGenerated = false;
     this.hasData = false;
-    this.logic = new MapControlsViewLogic(this);
-    this.templateString = '';
-    this.cssString = '';
   }
 
   static styles = css`
-    /* Default styles - will be overridden by loaded CSS */
     :host {
       display: block;
     }
+    
+    .map-controls {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .map-controls h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+    
+    .control-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .control-buttons button {
+      flex: 1;
+      min-width: 120px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      background: #007bff;
+      color: white;
+    }
+    
+    .control-buttons button:hover {
+      background: #0056b3;
+    }
+    
+    .control-buttons button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
   `;
 
-  async connectedCallback() {
-    super.connectedCallback();
-    await this._loadTemplates();
-  }
-
-  async _loadTemplates() {
-    // Load HTML template and CSS separately
-    this.templateString = await TemplateLoader.loadTemplate('/js/components/templates/MapControlsView.html');
-    this.cssString = await TemplateLoader.loadCSS('/js/components/styles/MapControlsView.css');
-    this.staticStyles = css`${unsafeCSS(this.cssString)}`;
-  }
-
   render() {
-    // Use the loaded template string
-    return html`${unsafeHTML(this.templateString)}`;
+    return MapControlsViewTemplate(this);
   }
 
   _onGenerateMap() {
-    this.logic.onGenerateMap();
+    this.dispatchEvent(new CustomEvent('generate-map'));
   }
 
   _onDownloadCSV() {
-    this.logic.onDownloadCSV();
+    this.dispatchEvent(new CustomEvent('download-csv'));
   }
 
   _onDownloadSVG() {
-    this.logic.onDownloadSVG();
+    this.dispatchEvent(new CustomEvent('download-svg'));
   }
 
   _onDownloadPNG() {
-    this.logic.onDownloadPNG();
+    this.dispatchEvent(new CustomEvent('download-png'));
   }
 
   _onResetData() {
-    this.logic.onResetData();
+    this.dispatchEvent(new CustomEvent('reset-data'));
   }
 }
 

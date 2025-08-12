@@ -1,51 +1,66 @@
-import { LitElement, html, css, unsafeCSS } from 'https://esm.sh/lit@2.7.0';
-import { unsafeHTML } from 'https://esm.sh/lit@2.7.0/directives/unsafe-html.js';
-import { TemplateLoader } from '../utils/templateLoader.js';
-import { BulkUploadViewLogic } from './logic/BulkUploadView.js';
+﻿import { LitElement, html, css } from 'https://esm.sh/lit@2.7.0';
+import { BulkUploadViewTemplate } from './templates/BulkUploadViewTemplate.js';
 
 export class BulkUploadView extends LitElement {
-  static properties = {
-    uploading: { type: Boolean }
-  };
-
-  constructor() {
-    super();
-    this.uploading = false;
-    this.logic = new BulkUploadViewLogic(this);
-    this.templateString = '';
-    this.cssString = '';
-  }
-
   static styles = css`
-    /* Default styles - will be overridden by loaded CSS */
     :host {
       display: block;
     }
+    
+    .bulk-upload {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .bulk-upload h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+    
+    .upload-form {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    
+    .upload-form input[type="file"] {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      background: #28a745;
+      color: white;
+    }
+    
+    .btn:hover {
+      background: #218838;
+    }
   `;
 
-  async connectedCallback() {
-    super.connectedCallback();
-    await this._loadTemplates();
-  }
-
-  async _loadTemplates() {
-    // Load HTML template and CSS separately
-    this.templateString = await TemplateLoader.loadTemplate('/js/components/templates/BulkUploadView.html');
-    this.cssString = await TemplateLoader.loadCSS('/js/components/styles/BulkUploadView.css');
-    this.staticStyles = css`${unsafeCSS(this.cssString)}`;
-  }
-
   render() {
-    // Use the loaded template string
-    return html`${unsafeHTML(this.templateString)}`;
+    return BulkUploadViewTemplate(this);
   }
 
   _onSubmit(event) {
-    this.logic.onSubmit(event);
-  }
-
-  _onDownloadTemplate() {
-    this.logic.onDownloadTemplate();
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    this.dispatchEvent(new CustomEvent('furnaces-uploaded', {
+      detail: { formData }
+    }));
   }
 }
 

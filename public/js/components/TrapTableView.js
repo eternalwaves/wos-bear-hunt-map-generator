@@ -1,50 +1,97 @@
-import { LitElement, html, css, unsafeCSS } from 'https://esm.sh/lit@2.7.0';
-import { unsafeHTML } from 'https://esm.sh/lit@2.7.0/directives/unsafe-html.js';
-import { TemplateLoader } from '../utils/templateLoader.js';
+import { LitElement, html, css } from 'https://esm.sh/lit@2.7.0';
 import { TrapTableViewLogic } from './logic/TrapTableView.js';
-import './TrapTableRow.js';
+import { TrapTableViewTemplate } from './templates/TrapTableViewTemplate.js';
 import './TrapForm.js';
 
 export class TrapTableView extends LitElement {
   static properties = {
-    map: { type: Object },
     traps: { type: Array },
     showForm: { type: Boolean }
   };
 
   constructor() {
     super();
-    this.map = null;
     this.traps = [];
     this.showForm = false;
     this.logic = new TrapTableViewLogic(this);
-    this.templateString = '';
-    this.cssString = '';
   }
 
-  static styles = css`/* Default styles - will be overridden by loaded CSS */ :host { display: block; }`;
-
-  async connectedCallback() {
-    super.connectedCallback();
-    await this._loadTemplates();
-  }
-
-  async _loadTemplates() {
-    // Load HTML template (includes CSS in style tag)
-    this.templateString = await TemplateLoader.loadTemplate('/js/components/templates/TrapTableView.html');
-  }
+  static styles = css`
+    :host {
+      display: block;
+    }
+    
+    .trap-section {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .trap-section h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .add-trap-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .add-trap-btn:hover {
+      background: #218838;
+    }
+    
+    .trap-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    
+    .trap-table th,
+    .trap-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .trap-table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .trap-table tr:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .actionBtns {
+      text-align: center;
+      vertical-align: middle;
+    }
+    
+    .actionBtns button {
+      margin: 2px;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+  `;
 
   render() {
-    // Use the loaded template string
-    return html`${unsafeHTML(this.templateString)}`;
+    return TrapTableViewTemplate(this);
   }
 
-  updated(changedProperties) {
-    if (changedProperties.has('map') && this.map) {
-      this.logic.updateTrapsFromMap();
-    }
-  }
-
+  // Event handlers that delegate to logic class
   _toggleForm() {
     this.logic.toggleForm();
   }
@@ -57,12 +104,21 @@ export class TrapTableView extends LitElement {
     this.logic.onFormCancelled();
   }
 
-  _onTrapEdit(event) {
-    this.logic.onTrapEdit(event);
+  _onTrapUpdated(event) {
+    this.logic.onTrapUpdated(event);
   }
 
-  _onTrapDelete(event) {
-    this.logic.onTrapDelete(event);
+  _onTrapDeleted(event) {
+    this.logic.onTrapDeleted(event);
+  }
+
+  // Row-level event handlers
+  _onEdit(trap) {
+    this.logic.onEdit(trap);
+  }
+
+  _onDelete(trap) {
+    this.logic.onDelete(trap);
   }
 }
 

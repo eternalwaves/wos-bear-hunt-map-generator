@@ -1,4 +1,4 @@
-export class MapLegendViewLogic {
+﻿export class MapLegendViewLogic {
   constructor(component) {
     this.component = component;
   }

@@ -1,0 +1,600 @@
+﻿/* Universal box-sizing */
+* {
+    box-sizing: border-box;
+}
+
+/* General Page Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    padding: 0;
+    background-color: #f4f4f4;
+    text-align: center;
+}
+
+/* Headings */
+h1 {
+    color: #333;
+    margin: 0;
+}
+
+h2 {
+    color: #555;
+    margin-top: 20px;
+}
+
+h3 {
+    color: #333;
+    margin: 0 0 15px 0;
+}
+
+/* User Info */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-info span {
+    font-weight: 500;
+    color: #333;
+}
+
+.user-info a {
+    color: #667eea;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.user-info a:hover {
+    background: #f8f9fa;
+    text-decoration: underline;
+}
+
+/* Forms */
+form {
+    background: white;
+    padding: 15px;
+    margin: 10px auto;
+    width: 50%;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+input, button, select {
+    margin: 5px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+input:disabled,
+button:disabled,
+select:disabled {
+    background-color: #DDD !important;
+    cursor: not-allowed;
+}
+
+/* Buttons */
+button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button.lockBtn[data-locked='false'] {
+    background: green;
+}
+
+button.lockBtn[data-locked='false']:hover,
+button.lockBtn[data-locked='false']:focus {
+    background: darkred;
+}
+
+button.lockBtn[data-locked='true'] {
+    background: darkred;
+}
+
+button.lockBtn[data-locked='true']:hover,
+button.lockBtn[data-locked='true']:focus {
+    background: green;
+}
+
+/* Table Styles - Consistent across all tables */
+.furnace-table,
+.trap-table,
+.misc-object-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    table-layout: fixed;
+}
+
+.furnace-table th,
+.furnace-table td,
+.trap-table th,
+.trap-table td,
+.misc-object-table th,
+.misc-object-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.furnace-table th,
+.trap-table th,
+.misc-object-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.furnace-table tr:hover,
+.trap-table tr:hover,
+.misc-object-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Column width specifications */
+.furnace-table th:nth-child(1), /* # */
+.furnace-table td:nth-child(1),
+.trap-table th:nth-child(1),
+.trap-table td:nth-child(1),
+.misc-object-table th:nth-child(1),
+.misc-object-table td:nth-child(1) {
+    width: 40px;
+    text-align: center;
+}
+
+.furnace-table th:nth-child(2), /* Name */
+.furnace-table td:nth-child(2) {
+    width: 120px;
+}
+
+.furnace-table th:nth-child(3), /* Level */
+.furnace-table td:nth-child(3) {
+    width: 80px;
+}
+
+.furnace-table th:nth-child(4), /* Power */
+.furnace-table td:nth-child(4) {
+    width: 80px;
+}
+
+.furnace-table th:nth-child(5), /* Chief Gear */
+.furnace-table td:nth-child(5) {
+    width: 200px;
+}
+
+.furnace-table th:nth-child(6), /* Rank */
+.furnace-table td:nth-child(6) {
+    width: 80px;
+}
+
+.furnace-table th:nth-child(7), /* Participation */
+.furnace-table td:nth-child(7) {
+    width: 100px;
+}
+
+.furnace-table th:nth-child(8), /* Trap Pref */
+.furnace-table td:nth-child(8) {
+    width: 100px;
+}
+
+.furnace-table th:nth-child(9), /* X */
+.furnace-table td:nth-child(9),
+.trap-table th:nth-child(2),
+.trap-table td:nth-child(2),
+.misc-object-table th:nth-child(2),
+.misc-object-table td:nth-child(2) {
+    width: 60px;
+    text-align: center;
+}
+
+.furnace-table th:nth-child(10), /* Y */
+.furnace-table td:nth-child(10),
+.trap-table th:nth-child(3),
+.trap-table td:nth-child(3),
+.misc-object-table th:nth-child(3),
+.misc-object-table td:nth-child(3) {
+    width: 60px;
+    text-align: center;
+}
+
+.furnace-table th:nth-child(11), /* Shift */
+.furnace-table td:nth-child(11) {
+    width: 100px;
+    text-align: center;
+}
+
+.furnace-table th:nth-child(12), /* Actions */
+.furnace-table td:nth-child(12),
+.trap-table th:nth-child(4),
+.trap-table td:nth-child(4),
+.misc-object-table th:nth-child(6),
+.misc-object-table td:nth-child(6) {
+    width: 120px;
+    text-align: center;
+}
+
+.furnace-table th:nth-child(13), /* Status */
+.furnace-table td:nth-child(13) {
+    width: 100px;
+}
+
+.misc-object-table th:nth-child(4), /* Size */
+.misc-object-table td:nth-child(4) {
+    width: 60px;
+    text-align: center;
+}
+
+.misc-object-table th:nth-child(5), /* Name */
+.misc-object-table td:nth-child(5) {
+    width: 120px;
+}
+
+/* Input field styles within tables */
+.furnace-table input,
+.trap-table input,
+.misc-object-table input {
+    width: 100%;
+    margin: 0;
+    padding: 4px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+}
+
+.furnace-table select,
+.trap-table select,
+.misc-object-table select {
+    width: 100%;
+    margin: 0;
+    padding: 4px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+}
+
+/* Action button styles */
+.actionBtns button {
+    margin: 2px;
+    padding: 4px 8px;
+    font-size: 11px;
+    min-width: 50px;
+}
+
+.shiftFurnaceBtns button {
+    margin: 1px;
+    padding: 2px 4px;
+    font-size: 10px;
+    width: 20px;
+    height: 20px;
+    min-width: unset;
+}
+
+/* Tables */
+table {
+    width: 80%;
+    margin: 15px auto;
+    border-collapse: collapse;
+    background: white;
+}
+
+thead {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #007BFF;
+    color: white;
+}
+
+/* Status Classes */
+.unsaved {
+    background-color: #FAD800 !important;
+}
+
+/* Make unsaved styles take precedence over status styles */
+.unsaved.assigned,
+.unsaved.moved,
+.unsaved.messaged,
+.unsaved.wrong {
+    background-color: #FAD800 !important;
+}
+
+text.unsaved {
+    fill: #F00;
+    font-weight: bold;
+}
+
+rect.unsaved {
+    fill: #FAD800 !important;
+}
+
+/* Make unsaved SVG styles take precedence over status styles */
+rect.unsaved.assigned,
+rect.unsaved.moved,
+rect.unsaved.messaged,
+rect.unsaved.wrong {
+    fill: #FAD800 !important;
+}
+
+.wrong {
+    background-color: #FF2A04 !important;
+}
+
+text.wrong {
+    fill: #FFF;
+    font-weight: bold;
+}
+
+rect.wrong {
+    fill: #FF2A04;
+}
+
+.messaged {
+    background-color: #FFAF3D !important;
+}
+
+rect.messaged {
+    fill: #FFAF3D;
+}
+
+.moved {
+    background-color: #00E200 !important;
+}
+
+rect.moved {
+    fill: #00E200;
+}
+
+.assigned {
+    background-color: #2DCCFF !important;
+}
+
+rect.assigned {
+    fill: #2DCCFF;
+}
+
+/* Sorting Priority List */
+#sortPriorityList {
+    list-style-type: none;
+    padding: 0;
+    width: 50%;
+    margin: auto;
+}
+
+#sortPriorityList li {
+    background: #ddd;
+    padding: 10px;
+    margin: 5px;
+    cursor: grab;
+    border-radius: 4px;
+    transition: background 0.2s ease-in-out;
+}
+
+#sortPriorityList li:hover {
+    background: #ccc;
+}
+
+/* Priority Controls */
+.priority-controls {
+    margin: 20px 0;
+}
+
+.priority-mode {
+    margin-bottom: 20px;
+}
+
+.priority-mode label {
+    display: inline-block;
+    margin-right: 20px;
+    cursor: pointer;
+}
+
+.priority-mode input[type="radio"] {
+    margin-right: 5px;
+}
+
+/* Weighted Criteria Styles */
+#weightedCriteriaList {
+    max-width: 500px;
+}
+
+.criteria-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+.criteria-item label {
+    min-width: 150px;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.weight-slider {
+    flex: 1;
+    margin: 0 10px;
+}
+
+.weight-value {
+    min-width: 40px;
+    text-align: right;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Ghost Class for Sorting */
+.sortable-ghost {
+    background: #bbb;
+    opacity: 0.7;
+}
+
+/* Legend Display */
+div#mapLegend {
+    text-align: left;
+}
+
+div#mapLegend span {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+}
+
+/* Full Body Loader */
+#loader {
+    background: #ffffff;
+    background: rgba(255, 255, 255, .5);
+    bottom: 0;
+    cursor: wait;
+    display: block;
+    height: 100%;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 100%;
+    z-index: 5;
+}
+
+#spinner {
+    box-sizing: border-box;
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border: 20px dotted #007BFF;
+    border-radius: 50%;
+    left: calc(50% - 50px);
+    top: calc(50% - 50px);
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Table Controls */
+.table-controls {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.table-controls button {
+    margin-right: 10px;
+}
+
+/* Gear columns in table */
+.gear-columns {
+    display: none;
+}
+
+.gear-columns.show {
+    display: table-cell;
+}
+
+.gear-cell {
+    font-size: 12px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gear-level {
+    font-weight: bold;
+    color: #007BFF;
+}
+
+.gear-charms {
+    color: #666;
+    font-size: 11px;
+}
+
+/* Gear input fields */
+.edit-gear-level,
+.edit-gear-charms {
+    width: 100%;
+    font-size: 11px;
+    padding: 2px 4px;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    margin: 1px 0;
+}
+
+.edit-gear-level {
+    font-weight: bold;
+    color: #007BFF;
+    background-color: #fff;
+}
+
+.edit-gear-charms {
+    color: #666;
+}
+
+.gear-cell {
+    padding: 2px;
+    vertical-align: top;
+}
+
+.gear-cell .gear-level,
+.gear-cell .gear-charms {
+    margin-bottom: 2px;
+}
+
+/* Gear display elements in table */
+.gear-display-level {
+    font-weight: bold;
+    color: #007BFF;
+    font-size: 11px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.gear-display-charms {
+    color: #666;
+    font-size: 10px;
+    display: block;
+}
+
+/* Loading */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.loading h2 {
+    margin: 0;
+    color: #333;
+}

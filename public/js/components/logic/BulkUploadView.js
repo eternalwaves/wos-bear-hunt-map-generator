@@ -1,4 +1,4 @@
-export class BulkUploadViewLogic {
+﻿export class BulkUploadViewLogic {
   constructor(component) {
     this.component = component;
   }

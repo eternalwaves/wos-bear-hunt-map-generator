@@ -1,4 +1,4 @@
-export class FurnaceFormViewLogic {
+﻿export class FurnaceFormViewLogic {
   constructor(component) {
     this.component = component;
   }
@@ -7,6 +7,9 @@ export class FurnaceFormViewLogic {
     event.preventDefault();
     const formData = new FormData(event.target);
     
+    const x = formData.get('x') ? parseFloat(formData.get('x')) : null;
+    const y = formData.get('y') ? parseFloat(formData.get('y')) : null;
+    
     const furnaceData = {
       name: formData.get('name'),
       level: formData.get('level'),
@@ -14,8 +17,10 @@ export class FurnaceFormViewLogic {
       rank: formData.get('rank'),
       participation: formData.get('participation') ? parseInt(formData.get('participation')) : null,
       trap_pref: formData.get('trap_pref'),
-      x: formData.get('x') ? parseFloat(formData.get('x')) : null,
-      y: formData.get('y') ? parseFloat(formData.get('y')) : null,
+      x: x,
+      y: y,
+      // Auto-assign status to "assigned" if both X and Y are set
+      status: (x && y) ? 'assigned' : '',
       // Chief gear data
       cap_level: formData.get('cap_level'),
       cap_charms: formData.get('cap_charms'),

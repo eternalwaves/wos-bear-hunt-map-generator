@@ -3,108 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bear Hunt Map Generator - Lit Framework</title>
-    
-    <!-- Global Styles -->
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-        }
-        
-        /* Loading indicator */
-        .loading-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f5f5f5;
-        }
-        
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #007bff;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .loading-text {
-            margin-left: 20px;
-            font-size: 18px;
-            color: #666;
-        }
-        
-        /* Error state */
-        .error-container {
-            display: none;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f5f5f5;
-            flex-direction: column;
-        }
-        
-        .error-message {
-            color: #dc3545;
-            font-size: 18px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .error-details {
-            color: #666;
-            font-size: 14px;
-            text-align: center;
-            max-width: 600px;
-        }
-        
-        /* Hide the main app until loaded */
-        #app {
-            display: none;
-        }
-        
-        #app.loaded {
-            display: block;
-        }
-    </style>
+    <title>Bear Hunt Map Generator - Lit Version</title>
+    <link rel="stylesheet" href="styles2.css">
 </head>
 <body>
-    <!-- Loading State -->
-    <div id="loading" class="loading-container">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Loading Bear Hunt Map Generator...</div>
-    </div>
-    
-    <!-- Error State -->
-    <div id="error" class="error-container">
-        <div class="error-message">Failed to load application</div>
-        <div class="error-details">
-            There was an error loading the Bear Hunt Map Generator. Please check your internet connection and try refreshing the page.
+    <div id="app">
+        <div class="loading">
+            <h2>Loading...</h2>
         </div>
     </div>
-    
-    <!-- Main Application Container -->
-    <div id="app">
-        <!-- The main MapGeneratorView component will be rendered here -->
-        <map-generator-view></map-generator-view>
-    </div>
 
-    <!-- Import Lit and core utilities -->
     <script type="module">
         // Import Lit framework
         import { LitElement, html, css, unsafeCSS } from 'https://esm.sh/lit@2.7.0';
@@ -113,110 +21,14 @@
         // Import the main application component
         import './public/js/components/MapGeneratorView.js';
         
-        // Import all other components to ensure they're registered
-        import './public/js/components/MapManagementView.js';
-        import './public/js/components/FurnaceFormView.js';
-        import './public/js/components/BulkUploadView.js';
-        import './public/js/components/FurnaceTableView.js';
-        import './public/js/components/TrapTableView.js';
-        import './public/js/components/MiscObjectTableView.js';
-        import './public/js/components/PrioritySelectionView.js';
-        import './public/js/components/MapControlsView.js';
-        import './public/js/components/MapLegendView.js';
-        import './public/js/components/MapDisplayView.js';
-        import './public/js/components/GearModal.js';
-        import './public/js/components/FurnaceTableRow.js';
-        import './public/js/components/TrapTableRow.js';
-        import './public/js/components/MiscObjectTableRow.js';
-        import './public/js/components/TrapForm.js';
-        import './public/js/components/MiscObjectForm.js';
-        import './public/js/components/GearCell.js';
-        import './public/js/components/GearItem.js';
-        
-        // Import auth components
-        import './public/js/components/auth/LoginView.js';
-        import './public/js/components/auth/RegisterView.js';
-        import './public/js/components/auth/PasswordResetView.js';
-        import './public/js/components/auth/UserManagementView.js';
-        
-        // Import models
-        import './public/js/models/MapObject.js';
-        import './public/js/models/Furnace.js';
-        import './public/js/models/Trap.js';
-        import './public/js/models/MiscObject.js';
-        import './public/js/models/Map.js';
-        import './public/js/models/User.js';
-        
-        // Import utilities
-        import './public/js/utils/templateLoader.js';
-        
-        // Application initialization
-        class AppInitializer {
-            constructor() {
-                this.loadingElement = document.getElementById('loading');
-                this.errorElement = document.getElementById('error');
-                this.appElement = document.getElementById('app');
-                this.init();
-            }
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = document.getElementById('app');
             
-            async init() {
-                try {
-                    // Wait for all components to be registered
-                    await this.waitForComponents();
-                    
-                    // Hide loading, show app
-                    this.loadingElement.style.display = 'none';
-                    this.appElement.classList.add('loaded');
-                    
-                    console.log('Bear Hunt Map Generator loaded successfully!');
-                    
-                } catch (error) {
-                    console.error('Failed to load application:', error);
-                    this.showError(error);
-                }
-            }
-            
-            async waitForComponents() {
-                // Wait for the main component to be available
-                const maxAttempts = 50;
-                let attempts = 0;
-                
-                while (attempts < maxAttempts) {
-                    if (customElements.get('map-generator-view')) {
-                        return;
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    attempts++;
-                }
-                
-                throw new Error('Timeout waiting for components to load');
-            }
-            
-            showError(error) {
-                this.loadingElement.style.display = 'none';
-                this.errorElement.style.display = 'flex';
-                
-                const errorDetails = this.errorElement.querySelector('.error-details');
-                errorDetails.textContent = `Error: ${error.message}. Please check the console for more details.`;
-            }
-        }
-        
-        // Initialize the application when the DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                new AppInitializer();
-            });
-        } else {
-            new AppInitializer();
-        }
-        
-        // Global error handler
-        window.addEventListener('error', (event) => {
-            console.error('Global error:', event.error);
-        });
-        
-        window.addEventListener('unhandledrejection', (event) => {
-            console.error('Unhandled promise rejection:', event.reason);
+            // Create and append the main component
+            const mapGenerator = document.createElement('map-generator-view');
+            app.innerHTML = '';
+            app.appendChild(mapGenerator);
         });
     </script>
 </body>

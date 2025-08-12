@@ -1,6 +1,16 @@
-export class MapDisplayViewLogic {
+﻿export class MapDisplayViewLogic {
   constructor(component) {
     this.component = component;
+  }
+
+  updateMapDisplay() {
+    // This function is called when the map or version changes
+    // The actual SVG content should be loaded by the parent MapGeneratorView
+    // and passed down as a property
+    if (this.component.svgContent) {
+      // The SVG content is already available, just ensure it's displayed
+      this.component.requestUpdate();
+    }
   }
 
   onDownloadSVG() {

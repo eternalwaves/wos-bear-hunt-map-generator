@@ -6,107 +6,63 @@ export class TrapTableViewLogic {
     this.component = component;
   }
 
-  toggleForm() {
-    this.component.showForm = !this.component.showForm;
-    this.component.requestUpdate();
+  updateTrapsFromMap() {
+    // This method is called when the traps property changes
+    // The traps are already set on the component
+    // No additional processing needed since we're using the traps array directly
   }
 
-  async onTrapSubmitted(event) {
-    const trapData = event.detail;
-    const trap = new Trap(trapData.x, trapData.y);
-    
-    try {
-      const response = await fetch('/api.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'add_trap',
-          map_id: this.component.map.getId(),
-          trap: trap.toArray()
-        })
-      });
+  toggleForm() {
+    this.component.showForm = !this.component.showForm;
+  }
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          this.component.traps.push(trap);
-          this.component.showForm = false;
-          this.component.requestUpdate();
-          
-          this.component.dispatchEvent(new CustomEvent('trap-added', {
-            detail: { trap }
-          }));
-        } else {
-          alert('Failed to add trap: ' + result.message);
-        }
-      } else {
-        alert('Failed to add trap');
-      }
-    } catch (error) {
-      console.error('Error adding trap:', error);
-      alert('Error adding trap');
-    }
+  onTrapSubmitted(event) {
+    // Handle trap form submission
+    console.log('Trap submitted:', event.detail);
+    this.component.showForm = false;
+    
+    // Dispatch event to parent
+    this.component.dispatchEvent(new CustomEvent('trap-added', {
+      detail: event.detail
+    }));
   }
 
   onFormCancelled() {
     this.component.showForm = false;
-    this.component.requestUpdate();
   }
 
-  async onTrapEdit(event) {
-    const trap = event.detail;
-    // Handle trap editing - could open a modal or form
-    this.component.dispatchEvent(new CustomEvent('trap-edit', {
-      detail: { trap }
+  onTrapUpdated(event) {
+    // Handle trap update
+    console.log('Trap updated:', event.detail);
+    
+    // Dispatch event to parent
+    this.component.dispatchEvent(new CustomEvent('trap-updated', {
+      detail: event.detail
     }));
   }
 
-  async onTrapDelete(event) {
-    const trap = event.detail;
+  onTrapDeleted(event) {
+    // Handle trap deletion
+    console.log('Trap deleted:', event.detail);
     
-    try {
-      const response = await fetch('/api.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete_trap',
-          map_id: this.component.map.getId(),
-          trap_id: trap.getId()
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          const index = this.component.traps.findIndex(t => t.getId() === trap.getId());
-          if (index > -1) {
-            this.component.traps.splice(index, 1);
-            this.component.requestUpdate();
-          }
-          
-          this.component.dispatchEvent(new CustomEvent('trap-deleted', {
-            detail: { trap }
-          }));
-        } else {
-          alert('Failed to delete trap: ' + result.message);
-        }
-      } else {
-        alert('Failed to delete trap');
-      }
-    } catch (error) {
-      console.error('Error deleting trap:', error);
-      alert('Error deleting trap');
-    }
+    // Dispatch event to parent
+    this.component.dispatchEvent(new CustomEvent('trap-deleted', {
+      detail: event.detail
+    }));
   }
 
-  updateTrapsFromMap() {
-    if (this.component.map) {
-      this.component.traps = this.component.map.getTraps();
-      this.component.requestUpdate();
+  // Row-level methods
+  onEdit(trap) {
+    this.component.dispatchEvent(new CustomEvent('trap-edit', {
+      detail: trap
+    }));
+  }
+
+  onDelete(trap) {
+    if (confirm(`Are you sure you want to delete this trap?`)) {
+      this.component.dispatchEvent(new CustomEvent('trap-deleted', {
+        detail: trap
+      }));
     }
   }
 }

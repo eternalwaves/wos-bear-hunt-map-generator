@@ -3,21 +3,7 @@ export class LoginViewLogic {
     this.component = component;
   }
 
-  onUsernameChange(event) {
-    this.component.username = event.target.value;
-  }
-
-  onPasswordChange(event) {
-    this.component.password = event.target.value;
-  }
-
-  onOtpChange(event) {
-    this.component.otpCode = event.target.value;
-  }
-
-  async onSubmit(event) {
-    event.preventDefault();
-    
+  async onSubmit() {
     this.component.loading = true;
     this.component.error = '';
 
@@ -56,9 +42,7 @@ export class LoginViewLogic {
     }
   }
 
-  async onOtpSubmit(event) {
-    event.preventDefault();
-    
+  async onOtpSubmit() {
     this.component.loading = true;
     this.component.error = '';
 
@@ -90,5 +74,17 @@ export class LoginViewLogic {
     } finally {
       this.component.loading = false;
     }
+  }
+
+  onForgotPassword() {
+    this.component.dispatchEvent(new CustomEvent('navigate', {
+      detail: { route: 'password-reset' }
+    }));
+  }
+
+  onRegister() {
+    this.component.dispatchEvent(new CustomEvent('navigate', {
+      detail: { route: 'register' }
+    }));
   }
 }

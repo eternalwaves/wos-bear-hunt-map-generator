@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication - Bear Hunt Map Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-container h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading h2 {
+            margin: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="auth-container">
+            <h1>Map Application</h1>
+            <div id="app">
+                <div class="loading">
+                    <h2>Loading...</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import 'https://esm.sh/lit@2.7.0';
+        import './js/components/auth/LoginView.js';
+        import './js/components/auth/RegisterView.js';
+        import './js/components/auth/PasswordResetView.js';
+        import './js/components/auth/UserManagementView.js';
+        
+        class AuthApp {
+            constructor() {
+                this.currentView = 'login';
+                this.app = document.getElementById('app');
+                this.init();
+            }
+
+            init() {
+                // Check URL parameters for initial view
+                const urlParams = new URLSearchParams(window.location.search);
+                const view = urlParams.get('view') || 'login';
+                this.showView(view);
+
+                // Listen for navigation events
+                document.addEventListener('navigate', (event) => {
+                    this.showView(event.detail.route);
+                });
+            }
+
+            showView(viewName) {
+                this.currentView = viewName;
+                this.app.innerHTML = '';
+
+                let component;
+                switch (viewName) {
+                    case 'login':
+                        component = document.createElement('login-view');
+                        break;
+                    case 'register':
+                        component = document.createElement('register-view');
+                        break;
+                    case 'password-reset':
+                        component = document.createElement('password-reset-view');
+                        break;
+                    case 'user-management':
+                        component = document.createElement('user-management-view');
+                        break;
+                    default:
+                        component = document.createElement('login-view');
+                }
+
+                this.app.appendChild(component);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new AuthApp();
+        });
+    </script>
+</body>
+</html>

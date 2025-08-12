@@ -1,4 +1,4 @@
-export class PrioritySelectionViewLogic {
+﻿export class PrioritySelectionViewLogic {
   constructor(component) {
     this.component = component;
   }
