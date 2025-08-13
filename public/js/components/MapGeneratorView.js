@@ -332,6 +332,14 @@ export class MapGeneratorView extends LitElement {
     this.logic.onPriorityChanged(event);
   }
 
+  _onFurnaceDataChanged(event) {
+    // Update the SVG display when furnace data changes
+    const mapDisplayView = this.shadowRoot?.querySelector('map-display-view');
+    if (mapDisplayView) {
+      mapDisplayView.updateUnsavedClasses();
+    }
+  }
+
   _onFurnacesUploaded(event) {
     this.logic.onFurnacesUploaded(event);
   }

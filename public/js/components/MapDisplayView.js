@@ -5,13 +5,17 @@ import { MapDisplayViewTemplate } from './templates/MapDisplayViewTemplate.js';
 export class MapDisplayView extends LitElement {
   static properties = {
     svgContent: { type: String },
-    loading: { type: Boolean }
+    loading: { type: Boolean },
+    furnaces: { type: Array },
+    hasUnsavedChanges: { type: Function }
   };
 
   constructor() {
     super();
     this.svgContent = '';
     this.loading = false;
+    this.furnaces = [];
+    this.hasUnsavedChanges = null;
     this.logic = new MapDisplayViewLogic(this);
   }
 
@@ -101,6 +105,24 @@ export class MapDisplayView extends LitElement {
       stroke-width: 2px;
     }
     
+    /* Import unsaved styles from styles2.css for SVG elements */
+    rect.unsaved {
+      fill: #FAD800 !important;
+    }
+    
+    text.unsaved {
+      fill: #F00;
+      font-weight: bold;
+    }
+    
+    /* Make unsaved SVG styles take precedence over status styles */
+    rect.unsaved.assigned,
+    rect.unsaved.moved,
+    rect.unsaved.messaged,
+    rect.unsaved.wrong {
+      fill: #FAD800 !important;
+    }
+    
     /* Map Changes Buttons Container */
     .map-changes-container {
       position: fixed;
@@ -185,6 +207,62 @@ export class MapDisplayView extends LitElement {
   updateMapDisplay(svgContent) {
     this.svgContent = svgContent;
   }
-}
+
+  updated(changedProperties) {
+    super.updated(changedProperties);
+    
+    // Only apply unsaved classes when the furnaces array itself changes (not individual furnace properties)
+    if (changedProperties.has('furnaces')) {
+      this._applyUnsavedClasses();
+    }
+  }
+
+  // Public method to manually trigger unsaved class updates
+  updateUnsavedClasses() {
+    this._applyUnsavedClasses();
+  }
+
+  _applyUnsavedClasses() {
+    if (!this.furnaces || !this.hasUnsavedChanges || !this.svgContent) {
+      return;
+    }
+
+    // Wait for the SVG to be rendered
+    this.updateComplete.then(() => {
+      const mapElement = this.shadowRoot?.querySelector('#map');
+      if (!mapElement) return;
+
+      // Find all furnace SVG elements
+      const furnaceElements = mapElement.querySelectorAll('rect[data-obj-id^="furnace_"]');
+      
+      furnaceElements.forEach(element => {
+        const furnaceId = element.getAttribute('data-obj-id');
+        const furnace = this.furnaces.find(f => f.id === furnaceId);
+        
+        if (furnace) {
+          const hasUnsaved = this.hasUnsavedChanges(furnace);
+          
+          if (hasUnsaved) {
+            element.classList.add('unsaved');
+            
+            // Also apply unsaved class to associated text labels
+            const textElements = mapElement.querySelectorAll(`text[data-obj-id="${furnaceId}"]`);
+            textElements.forEach(textElement => {
+              textElement.classList.add('unsaved');
+            });
+          } else {
+            element.classList.remove('unsaved');
+            
+            // Remove unsaved class from associated text labels
+            const textElements = mapElement.querySelectorAll(`text[data-obj-id="${furnaceId}"]`);
+            textElements.forEach(textElement => {
+              textElement.classList.remove('unsaved');
+            });
+          }
+        }
+      });
+    });
+  }
+ }
 
 customElements.define('map-display-view', MapDisplayView);

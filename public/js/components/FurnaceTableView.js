@@ -296,6 +296,7 @@ export class FurnaceTableView extends LitElement {
     if (furnace) {
       furnace.name = event.target.value;
       this.requestUpdate();
+      this._notifyFurnaceChanged();
     }
   }
 
@@ -303,6 +304,7 @@ export class FurnaceTableView extends LitElement {
     if (furnace) {
       furnace.level = event.target.value;
       this.requestUpdate();
+      this._notifyFurnaceChanged();
     }
   }
 
@@ -310,6 +312,7 @@ export class FurnaceTableView extends LitElement {
     if (furnace) {
       furnace.power = parseInt(event.target.value);
       this.requestUpdate();
+      this._notifyFurnaceChanged();
     }
   }
 
@@ -317,6 +320,7 @@ export class FurnaceTableView extends LitElement {
     if (furnace) {
       furnace.rank = event.target.value;
       this.requestUpdate();
+      this._notifyFurnaceChanged();
     }
   }
 
@@ -324,6 +328,7 @@ export class FurnaceTableView extends LitElement {
     if (furnace) {
       furnace.participation = parseInt(event.target.value);
       this.requestUpdate();
+      this._notifyFurnaceChanged();
     }
   }
 
@@ -331,6 +336,7 @@ export class FurnaceTableView extends LitElement {
     if (furnace) {
       furnace.trapPref = event.target.value;
       this.requestUpdate();
+      this._notifyFurnaceChanged();
     }
   }
 
@@ -342,6 +348,7 @@ export class FurnaceTableView extends LitElement {
         furnace.status = 'assigned';
       }
       this.requestUpdate();
+      this._notifyFurnaceChanged();
     }
   }
 
@@ -353,6 +360,7 @@ export class FurnaceTableView extends LitElement {
         furnace.status = 'assigned';
       }
       this.requestUpdate();
+      this._notifyFurnaceChanged();
     }
   }
 
@@ -360,7 +368,15 @@ export class FurnaceTableView extends LitElement {
     if (furnace) {
       furnace.status = event.target.value;
       this.requestUpdate();
+      this._notifyFurnaceChanged();
     }
+  }
+
+  _notifyFurnaceChanged() {
+    // Dispatch event to notify parent that furnace data has changed
+    this.dispatchEvent(new CustomEvent('furnace-data-changed', {
+      detail: { furnaces: this.furnaces }
+    }));
   }
 
   _onGearClick(event, furnace) {

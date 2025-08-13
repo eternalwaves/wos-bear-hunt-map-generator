@@ -64,6 +64,7 @@ export function MapGeneratorViewTemplate(component) {
         @furnace-updated=${component._onFurnaceUpdated}
         @furnace-deleted=${component._onFurnaceDeleted}
         @furnace-save=${component._onFurnaceSave}
+        @furnace-data-changed=${component._onFurnaceDataChanged}
       ></furnace-table-view>
 
       <!-- Sorting Priority Selection -->
@@ -88,9 +89,9 @@ export function MapGeneratorViewTemplate(component) {
 
       <!-- Map Display -->
       <map-display-view
-        .map=${component.currentMap}
-        .version=${component.currentVersion}
         .svgContent=${component.svgContent}
+        .furnaces=${component.furnaces}
+        .hasUnsavedChanges=${(furnace) => component.logic.hasUnsavedChanges(furnace)}
       ></map-display-view>
     ` : html`
       <div class="loading">

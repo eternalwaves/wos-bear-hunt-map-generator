@@ -190,6 +190,9 @@ export class MapGeneratorViewLogic {
     this.component.traps = this.traps;
     this.component.miscObjects = this.miscObjects;
     this.component.hasData = this.furnaces.length > 0 || this.traps.length > 0 || this.miscObjects.length > 0;
+    
+    // Force a re-render of the MapDisplayView to update unsaved classes
+    this.component.requestUpdate();
   }
 
   // Helper function to normalize values for comparison
