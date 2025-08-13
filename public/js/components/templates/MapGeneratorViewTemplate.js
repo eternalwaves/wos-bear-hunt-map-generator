@@ -68,6 +68,7 @@ export function MapGeneratorViewTemplate(component) {
 
       <!-- Sorting Priority Selection -->
       <priority-selection-view
+        id="prioritySelectionView"
         @priority-changed=${component._onPriorityChanged}
       ></priority-selection-view>
 

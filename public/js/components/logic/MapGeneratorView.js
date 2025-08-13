@@ -13,6 +13,17 @@ export class MapGeneratorViewLogic {
     this.newOccupied = new Set();
     this.cellSize = 50;
     this.originalSavedGearData = {};
+    this.currentPrioritySettings = {
+      mode: 'simple',
+      simpleOrder: ['participation', 'level', 'rank', 'power'],
+      weightedCriteria: [
+        { criteria: 'power', weight: 1.0 },
+        { criteria: 'level', weight: 1.0 },
+        { criteria: 'rank', weight: 1.0 },
+        { criteria: 'participation', weight: 1.0 },
+        { criteria: 'chief_gear_and_charms', weight: 1.0 }
+      ]
+    };
   }
 
   async loadMaps() {
@@ -131,6 +142,20 @@ export class MapGeneratorViewLogic {
         // Update child components directly
         this.updateChildComponents();
         
+        // Apply priority settings if available
+        if (mapData.weightedCriteria) {
+          console.log('Loading weighted criteria:', mapData.weightedCriteria);
+          this.applyPrioritySettings({
+            mode: 'weighted',
+            weightedCriteria: mapData.weightedCriteria
+          });
+        } else {
+          console.log('No weighted criteria found, using simple priority mode');
+          this.applyPrioritySettings({
+            mode: 'simple'
+          });
+        }
+        
         // Load SVG map
         await this.loadSVGMap();
       }
@@ -248,6 +273,14 @@ export class MapGeneratorViewLogic {
     }
   }
 
+  applyPrioritySettings(settings) {
+    // Find the priority selection view component
+    const priorityView = this.component.shadowRoot?.querySelector('#prioritySelectionView');
+    if (priorityView) {
+      priorityView.setPrioritySettings(settings);
+    }
+  }
+
   clearMapData() {
     this.furnaces = [];
     this.traps = [];
@@ -343,6 +376,9 @@ export class MapGeneratorViewLogic {
   onPriorityChanged(event) {
     // Handle priority changed
     console.log('Priority changed:', event.detail);
+    
+    // Store the current priority settings for later use
+    this.currentPrioritySettings = event.detail;
   }
 
   onGenerateMap() {

@@ -108,22 +108,23 @@ export class FurnaceTableView extends LitElement {
       cursor: pointer;
     }
     
-    .edit-level,
-    .edit-rank {
-        width: 3.05em;
+    .furnace-table .edit-level {
+        width: 5.5em;
     }
 
-    .edit-power {
-        width: 7.25em;
-    }
-
-    .edit-participation,
-    .edit-coord {
+    .furnace-table .edit-rank,
+    .furnace-table .edit-participation,
+    .furnace-table .edit-coord {
         width: 6em;
     }
 
-    .edit-trap-pref {
-        width: 4.5em;
+    .furnace-table .edit-power {
+        width: 8em;
+    }
+
+
+    .furnace-table .edit-trap-pref {
+        width: 4.7em;
     }
 
     /* Status classes */
