@@ -1,16 +1,5 @@
 ﻿import { html } from 'https://esm.sh/lit@2.7.0';
-
-// Validation lists from ExcelService
-const VALID_LEVELS = [
-  '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
-  '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
-  '21', '22', '23', '24', '25', '26', '27', '28', '29', '30',
-  'FC1', 'FC2', 'FC3', 'FC4', 'FC5', 'FC6', 'FC7', 'FC8', 'FC9', 'FC10'
-];
-
-const VALID_RANKS = ['R1', 'R2', 'R3', 'R4', 'R5'];
-
-const VALID_TRAP_PREFERENCES = ['1', '2', 'both', 'n/a'];
+import { Furnace } from '../../models/Furnace.js';
 
 export function FurnaceTableViewTemplate(component) {
   return html`
@@ -70,7 +59,7 @@ export function FurnaceTableViewTemplate(component) {
               <td>
                 <select class="edit-level" @change=${(e) => component._onLevelChange(e, furnace)}>
                   <option value="">Select Level</option>
-                  ${VALID_LEVELS.map(level => html`
+                  ${Furnace.VALID_LEVELS.map(level => html`
                     <option value="${level}" ?selected=${furnace.level === level}>${level}</option>
                   `)}
                 </select>
@@ -123,7 +112,7 @@ export function FurnaceTableViewTemplate(component) {
               <td>
                 <select class="edit-rank" @change=${(e) => component._onRankChange(e, furnace)}>
                   <option value="">Select Rank</option>
-                  ${VALID_RANKS.map(rank => html`
+                  ${Furnace.VALID_RANKS.map(rank => html`
                     <option value="${rank}" ?selected=${furnace.rank === rank}>${rank}</option>
                   `)}
                 </select>
@@ -138,7 +127,7 @@ export function FurnaceTableViewTemplate(component) {
               <td>
                 <select class="edit-trap-pref" @change=${(e) => component._onTrapPrefChange(e, furnace)}>
                   <option value="">Select Preference</option>
-                  ${VALID_TRAP_PREFERENCES.map(pref => html`
+                  ${Furnace.VALID_TRAP_PREFERENCES.map(pref => html`
                     <option value="${pref}" ?selected=${furnace.trapPref === pref}>${pref}</option>
                   `)}
                 </select>

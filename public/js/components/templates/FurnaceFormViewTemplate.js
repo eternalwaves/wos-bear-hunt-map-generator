@@ -1,16 +1,5 @@
 import { html } from 'https://esm.sh/lit@2.7.0';
-
-// Validation lists from ExcelService
-const VALID_LEVELS = [
-  '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
-  '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
-  '21', '22', '23', '24', '25', '26', '27', '28', '29', '30',
-  'FC1', 'FC2', 'FC3', 'FC4', 'FC5', 'FC6', 'FC7', 'FC8', 'FC9', 'FC10'
-];
-
-const VALID_RANKS = ['R1', 'R2', 'R3', 'R4', 'R5'];
-
-const VALID_TRAP_PREFERENCES = ['1', '2', 'both', 'n/a'];
+import { Furnace } from '../../models/Furnace.js';
 
 export function FurnaceFormViewTemplate(component) {
   return html`
@@ -26,7 +15,7 @@ export function FurnaceFormViewTemplate(component) {
             <label for="level">Level:</label>
             <select id="level" name="level" required>
               <option value="">Select Level</option>
-              ${VALID_LEVELS.map(level => html`
+              ${Furnace.VALID_LEVELS.map(level => html`
                 <option value="${level}">${level}</option>
               `)}
             </select>
@@ -41,7 +30,7 @@ export function FurnaceFormViewTemplate(component) {
             <label for="rank">Rank:</label>
             <select id="rank" name="rank" required>
               <option value="">Select Rank</option>
-              ${VALID_RANKS.map(rank => html`
+              ${Furnace.VALID_RANKS.map(rank => html`
                 <option value="${rank}">${rank}</option>
               `)}
             </select>
@@ -56,7 +45,7 @@ export function FurnaceFormViewTemplate(component) {
             <label for="trapPref">Trap Preference:</label>
             <select id="trapPref" name="trapPref">
               <option value="">Select Preference</option>
-              ${VALID_TRAP_PREFERENCES.map(pref => html`
+              ${Furnace.VALID_TRAP_PREFERENCES.map(pref => html`
                 <option value="${pref}">${pref}</option>
               `)}
             </select>
@@ -82,48 +71,9 @@ export function FurnaceFormViewTemplate(component) {
               <label for="capLevel">Cap Level:</label>
               <select id="capLevel" name="capLevel">
                 <option value="">Select Cap Level</option>
-                <option value="Uncommon">Uncommon</option>
-                <option value="Uncommon *">Uncommon *</option>
-                <option value="Rare">Rare</option>
-                <option value="Rare *">Rare *</option>
-                <option value="Rare **">Rare **</option>
-                <option value="Rare ***">Rare ***</option>
-                <option value="Epic">Epic</option>
-                <option value="Epic *">Epic *</option>
-                <option value="Epic **">Epic **</option>
-                <option value="Epic ***">Epic ***</option>
-                <option value="Epic T1">Epic T1</option>
-                <option value="Epic T1 *">Epic T1 *</option>
-                <option value="Epic T1 **">Epic T1 **</option>
-                <option value="Epic T1 ***">Epic T1 ***</option>
-                <option value="Mythic">Mythic</option>
-                <option value="Mythic *">Mythic *</option>
-                <option value="Mythic **">Mythic **</option>
-                <option value="Mythic ***">Mythic ***</option>
-                <option value="Mythic T1">Mythic T1</option>
-                <option value="Mythic T1 *">Mythic T1 *</option>
-                <option value="Mythic T1 **">Mythic T1 **</option>
-                <option value="Mythic T1 ***">Mythic T1 ***</option>
-                <option value="Mythic T2">Mythic T2</option>
-                <option value="Mythic T2 *">Mythic T2 *</option>
-                <option value="Mythic T2 **">Mythic T2 **</option>
-                <option value="Mythic T2 ***">Mythic T2 ***</option>
-                <option value="Legendary">Legendary</option>
-                <option value="Legendary *">Legendary *</option>
-                <option value="Legendary **">Legendary **</option>
-                <option value="Legendary ***">Legendary ***</option>
-                <option value="Legendary T1">Legendary T1</option>
-                <option value="Legendary T1 *">Legendary T1 *</option>
-                <option value="Legendary T1 **">Legendary T1 **</option>
-                <option value="Legendary T1 ***">Legendary T1 ***</option>
-                <option value="Legendary T2">Legendary T2</option>
-                <option value="Legendary T2 *">Legendary T2 *</option>
-                <option value="Legendary T2 **">Legendary T2 **</option>
-                <option value="Legendary T2 ***">Legendary T2 ***</option>
-                <option value="Legendary T3">Legendary T3</option>
-                <option value="Legendary T3 *">Legendary T3 *</option>
-                <option value="Legendary T3 **">Legendary T3 **</option>
-                <option value="Legendary T3 ***">Legendary T3 ***</option>
+                ${Furnace.VALID_GEAR_LEVELS.map(level => html`
+                  <option value="${level}">${level}</option>
+                `)}
               </select>
             </div>
             <div class="form-group">
@@ -137,48 +87,9 @@ export function FurnaceFormViewTemplate(component) {
               <label for="watchLevel">Watch Level:</label>
               <select id="watchLevel" name="watchLevel">
                 <option value="">Select Watch Level</option>
-                <option value="Uncommon">Uncommon</option>
-                <option value="Uncommon *">Uncommon *</option>
-                <option value="Rare">Rare</option>
-                <option value="Rare *">Rare *</option>
-                <option value="Rare **">Rare **</option>
-                <option value="Rare ***">Rare ***</option>
-                <option value="Epic">Epic</option>
-                <option value="Epic *">Epic *</option>
-                <option value="Epic **">Epic **</option>
-                <option value="Epic ***">Epic ***</option>
-                <option value="Epic T1">Epic T1</option>
-                <option value="Epic T1 *">Epic T1 *</option>
-                <option value="Epic T1 **">Epic T1 **</option>
-                <option value="Epic T1 ***">Epic T1 ***</option>
-                <option value="Mythic">Mythic</option>
-                <option value="Mythic *">Mythic *</option>
-                <option value="Mythic **">Mythic **</option>
-                <option value="Mythic ***">Mythic ***</option>
-                <option value="Mythic T1">Mythic T1</option>
-                <option value="Mythic T1 *">Mythic T1 *</option>
-                <option value="Mythic T1 **">Mythic T1 **</option>
-                <option value="Mythic T1 ***">Mythic T1 ***</option>
-                <option value="Mythic T2">Mythic T2</option>
-                <option value="Mythic T2 *">Mythic T2 *</option>
-                <option value="Mythic T2 **">Mythic T2 **</option>
-                <option value="Mythic T2 ***">Mythic T2 ***</option>
-                <option value="Legendary">Legendary</option>
-                <option value="Legendary *">Legendary *</option>
-                <option value="Legendary **">Legendary **</option>
-                <option value="Legendary ***">Legendary ***</option>
-                <option value="Legendary T1">Legendary T1</option>
-                <option value="Legendary T1 *">Legendary T1 *</option>
-                <option value="Legendary T1 **">Legendary T1 **</option>
-                <option value="Legendary T1 ***">Legendary T1 ***</option>
-                <option value="Legendary T2">Legendary T2</option>
-                <option value="Legendary T2 *">Legendary T2 *</option>
-                <option value="Legendary T2 **">Legendary T2 **</option>
-                <option value="Legendary T2 ***">Legendary T2 ***</option>
-                <option value="Legendary T3">Legendary T3</option>
-                <option value="Legendary T3 *">Legendary T3 *</option>
-                <option value="Legendary T3 **">Legendary T3 **</option>
-                <option value="Legendary T3 ***">Legendary T3 ***</option>
+                ${Furnace.VALID_GEAR_LEVELS.map(level => html`
+                  <option value="${level}">${level}</option>
+                `)}
               </select>
             </div>
             <div class="form-group">
@@ -192,48 +103,9 @@ export function FurnaceFormViewTemplate(component) {
               <label for="vestLevel">Vest Level:</label>
               <select id="vestLevel" name="vestLevel">
                 <option value="">Select Vest Level</option>
-                <option value="Uncommon">Uncommon</option>
-                <option value="Uncommon *">Uncommon *</option>
-                <option value="Rare">Rare</option>
-                <option value="Rare *">Rare *</option>
-                <option value="Rare **">Rare **</option>
-                <option value="Rare ***">Rare ***</option>
-                <option value="Epic">Epic</option>
-                <option value="Epic *">Epic *</option>
-                <option value="Epic **">Epic **</option>
-                <option value="Epic ***">Epic ***</option>
-                <option value="Epic T1">Epic T1</option>
-                <option value="Epic T1 *">Epic T1 *</option>
-                <option value="Epic T1 **">Epic T1 **</option>
-                <option value="Epic T1 ***">Epic T1 ***</option>
-                <option value="Mythic">Mythic</option>
-                <option value="Mythic *">Mythic *</option>
-                <option value="Mythic **">Mythic **</option>
-                <option value="Mythic ***">Mythic ***</option>
-                <option value="Mythic T1">Mythic T1</option>
-                <option value="Mythic T1 *">Mythic T1 *</option>
-                <option value="Mythic T1 **">Mythic T1 **</option>
-                <option value="Mythic T1 ***">Mythic T1 ***</option>
-                <option value="Mythic T2">Mythic T2</option>
-                <option value="Mythic T2 *">Mythic T2 *</option>
-                <option value="Mythic T2 **">Mythic T2 **</option>
-                <option value="Mythic T2 ***">Mythic T2 ***</option>
-                <option value="Legendary">Legendary</option>
-                <option value="Legendary *">Legendary *</option>
-                <option value="Legendary **">Legendary **</option>
-                <option value="Legendary ***">Legendary ***</option>
-                <option value="Legendary T1">Legendary T1</option>
-                <option value="Legendary T1 *">Legendary T1 *</option>
-                <option value="Legendary T1 **">Legendary T1 **</option>
-                <option value="Legendary T1 ***">Legendary T1 ***</option>
-                <option value="Legendary T2">Legendary T2</option>
-                <option value="Legendary T2 *">Legendary T2 *</option>
-                <option value="Legendary T2 **">Legendary T2 **</option>
-                <option value="Legendary T2 ***">Legendary T2 ***</option>
-                <option value="Legendary T3">Legendary T3</option>
-                <option value="Legendary T3 *">Legendary T3 *</option>
-                <option value="Legendary T3 **">Legendary T3 **</option>
-                <option value="Legendary T3 ***">Legendary T3 ***</option>
+                ${Furnace.VALID_GEAR_LEVELS.map(level => html`
+                  <option value="${level}">${level}</option>
+                `)}
               </select>
             </div>
             <div class="form-group">
@@ -247,48 +119,9 @@ export function FurnaceFormViewTemplate(component) {
               <label for="pantsLevel">Pants Level:</label>
               <select id="pantsLevel" name="pantsLevel">
                 <option value="">Select Pants Level</option>
-                <option value="Uncommon">Uncommon</option>
-                <option value="Uncommon *">Uncommon *</option>
-                <option value="Rare">Rare</option>
-                <option value="Rare *">Rare *</option>
-                <option value="Rare **">Rare **</option>
-                <option value="Rare ***">Rare ***</option>
-                <option value="Epic">Epic</option>
-                <option value="Epic *">Epic *</option>
-                <option value="Epic **">Epic **</option>
-                <option value="Epic ***">Epic ***</option>
-                <option value="Epic T1">Epic T1</option>
-                <option value="Epic T1 *">Epic T1 *</option>
-                <option value="Epic T1 **">Epic T1 **</option>
-                <option value="Epic T1 ***">Epic T1 ***</option>
-                <option value="Mythic">Mythic</option>
-                <option value="Mythic *">Mythic *</option>
-                <option value="Mythic **">Mythic **</option>
-                <option value="Mythic ***">Mythic ***</option>
-                <option value="Mythic T1">Mythic T1</option>
-                <option value="Mythic T1 *">Mythic T1 *</option>
-                <option value="Mythic T1 **">Mythic T1 **</option>
-                <option value="Mythic T1 ***">Mythic T1 ***</option>
-                <option value="Mythic T2">Mythic T2</option>
-                <option value="Mythic T2 *">Mythic T2 *</option>
-                <option value="Mythic T2 **">Mythic T2 **</option>
-                <option value="Mythic T2 ***">Mythic T2 ***</option>
-                <option value="Legendary">Legendary</option>
-                <option value="Legendary *">Legendary *</option>
-                <option value="Legendary **">Legendary **</option>
-                <option value="Legendary ***">Legendary ***</option>
-                <option value="Legendary T1">Legendary T1</option>
-                <option value="Legendary T1 *">Legendary T1 *</option>
-                <option value="Legendary T1 **">Legendary T1 **</option>
-                <option value="Legendary T1 ***">Legendary T1 ***</option>
-                <option value="Legendary T2">Legendary T2</option>
-                <option value="Legendary T2 *">Legendary T2 *</option>
-                <option value="Legendary T2 **">Legendary T2 **</option>
-                <option value="Legendary T2 ***">Legendary T2 ***</option>
-                <option value="Legendary T3">Legendary T3</option>
-                <option value="Legendary T3 *">Legendary T3 *</option>
-                <option value="Legendary T3 **">Legendary T3 **</option>
-                <option value="Legendary T3 ***">Legendary T3 ***</option>
+                ${Furnace.VALID_GEAR_LEVELS.map(level => html`
+                  <option value="${level}">${level}</option>
+                `)}
               </select>
             </div>
             <div class="form-group">
@@ -302,48 +135,9 @@ export function FurnaceFormViewTemplate(component) {
               <label for="ringLevel">Ring Level:</label>
               <select id="ringLevel" name="ringLevel">
                 <option value="">Select Ring Level</option>
-                <option value="Uncommon">Uncommon</option>
-                <option value="Uncommon *">Uncommon *</option>
-                <option value="Rare">Rare</option>
-                <option value="Rare *">Rare *</option>
-                <option value="Rare **">Rare **</option>
-                <option value="Rare ***">Rare ***</option>
-                <option value="Epic">Epic</option>
-                <option value="Epic *">Epic *</option>
-                <option value="Epic **">Epic **</option>
-                <option value="Epic ***">Epic ***</option>
-                <option value="Epic T1">Epic T1</option>
-                <option value="Epic T1 *">Epic T1 *</option>
-                <option value="Epic T1 **">Epic T1 **</option>
-                <option value="Epic T1 ***">Epic T1 ***</option>
-                <option value="Mythic">Mythic</option>
-                <option value="Mythic *">Mythic *</option>
-                <option value="Mythic **">Mythic **</option>
-                <option value="Mythic ***">Mythic ***</option>
-                <option value="Mythic T1">Mythic T1</option>
-                <option value="Mythic T1 *">Mythic T1 *</option>
-                <option value="Mythic T1 **">Mythic T1 **</option>
-                <option value="Mythic T1 ***">Mythic T1 ***</option>
-                <option value="Mythic T2">Mythic T2</option>
-                <option value="Mythic T2 *">Mythic T2 *</option>
-                <option value="Mythic T2 **">Mythic T2 **</option>
-                <option value="Mythic T2 ***">Mythic T2 ***</option>
-                <option value="Legendary">Legendary</option>
-                <option value="Legendary *">Legendary *</option>
-                <option value="Legendary **">Legendary **</option>
-                <option value="Legendary ***">Legendary ***</option>
-                <option value="Legendary T1">Legendary T1</option>
-                <option value="Legendary T1 *">Legendary T1 *</option>
-                <option value="Legendary T1 **">Legendary T1 **</option>
-                <option value="Legendary T1 ***">Legendary T1 ***</option>
-                <option value="Legendary T2">Legendary T2</option>
-                <option value="Legendary T2 *">Legendary T2 *</option>
-                <option value="Legendary T2 **">Legendary T2 **</option>
-                <option value="Legendary T2 ***">Legendary T2 ***</option>
-                <option value="Legendary T3">Legendary T3</option>
-                <option value="Legendary T3 *">Legendary T3 *</option>
-                <option value="Legendary T3 **">Legendary T3 **</option>
-                <option value="Legendary T3 ***">Legendary T3 ***</option>
+                ${Furnace.VALID_GEAR_LEVELS.map(level => html`
+                  <option value="${level}">${level}</option>
+                `)}
               </select>
             </div>
             <div class="form-group">
@@ -357,48 +151,9 @@ export function FurnaceFormViewTemplate(component) {
               <label for="caneLevel">Cane Level:</label>
               <select id="caneLevel" name="caneLevel">
                 <option value="">Select Cane Level</option>
-                <option value="Uncommon">Uncommon</option>
-                <option value="Uncommon *">Uncommon *</option>
-                <option value="Rare">Rare</option>
-                <option value="Rare *">Rare *</option>
-                <option value="Rare **">Rare **</option>
-                <option value="Rare ***">Rare ***</option>
-                <option value="Epic">Epic</option>
-                <option value="Epic *">Epic *</option>
-                <option value="Epic **">Epic **</option>
-                <option value="Epic ***">Epic ***</option>
-                <option value="Epic T1">Epic T1</option>
-                <option value="Epic T1 *">Epic T1 *</option>
-                <option value="Epic T1 **">Epic T1 **</option>
-                <option value="Epic T1 ***">Epic T1 ***</option>
-                <option value="Mythic">Mythic</option>
-                <option value="Mythic *">Mythic *</option>
-                <option value="Mythic **">Mythic **</option>
-                <option value="Mythic ***">Mythic ***</option>
-                <option value="Mythic T1">Mythic T1</option>
-                <option value="Mythic T1 *">Mythic T1 *</option>
-                <option value="Mythic T1 **">Mythic T1 **</option>
-                <option value="Mythic T1 ***">Mythic T1 ***</option>
-                <option value="Mythic T2">Mythic T2</option>
-                <option value="Mythic T2 *">Mythic T2 *</option>
-                <option value="Mythic T2 **">Mythic T2 **</option>
-                <option value="Mythic T2 ***">Mythic T2 ***</option>
-                <option value="Legendary">Legendary</option>
-                <option value="Legendary *">Legendary *</option>
-                <option value="Legendary **">Legendary **</option>
-                <option value="Legendary ***">Legendary ***</option>
-                <option value="Legendary T1">Legendary T1</option>
-                <option value="Legendary T1 *">Legendary T1 *</option>
-                <option value="Legendary T1 **">Legendary T1 **</option>
-                <option value="Legendary T1 ***">Legendary T1 ***</option>
-                <option value="Legendary T2">Legendary T2</option>
-                <option value="Legendary T2 *">Legendary T2 *</option>
-                <option value="Legendary T2 **">Legendary T2 **</option>
-                <option value="Legendary T2 ***">Legendary T2 ***</option>
-                <option value="Legendary T3">Legendary T3</option>
-                <option value="Legendary T3 *">Legendary T3 *</option>
-                <option value="Legendary T3 **">Legendary T3 **</option>
-                <option value="Legendary T3 ***">Legendary T3 ***</option>
+                ${Furnace.VALID_GEAR_LEVELS.map(level => html`
+                  <option value="${level}">${level}</option>
+                `)}
               </select>
             </div>
             <div class="form-group">

@@ -3,6 +3,7 @@
 namespace App\Application\Service;
 
 use App\Application\Exception\ValidationException;
+use App\Domain\MapObject\Furnace;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -10,27 +11,11 @@ use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 
 class ExcelService
 {
-    private const VALID_GEAR_LEVELS = [
-        'Uncommon', 'Uncommon *', 'Rare', 'Rare *', 'Rare **', 'Rare ***',
-        'Epic', 'Epic *', 'Epic **', 'Epic ***', 'Epic T1', 'Epic T1 *', 'Epic T1 **', 'Epic T1 ***',
-        'Mythic', 'Mythic *', 'Mythic **', 'Mythic ***', 'Mythic T1', 'Mythic T1 *', 'Mythic T1 **', 'Mythic T1 ***',
-        'Mythic T2', 'Mythic T2 *', 'Mythic T2 **', 'Mythic T2 ***',
-        'Legendary', 'Legendary *', 'Legendary **', 'Legendary ***',
-        'Legendary T1', 'Legendary T1 *', 'Legendary T1 **', 'Legendary T1 ***',
-        'Legendary T2', 'Legendary T2 *', 'Legendary T2 **', 'Legendary T2 ***',
-        'Legendary T3', 'Legendary T3 *', 'Legendary T3 **', 'Legendary T3 ***'
-    ];
-
-    private const VALID_LEVELS = [
-        '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
-        '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
-        '21', '22', '23', '24', '25', '26', '27', '28', '29', '30',
-        'FC1', 'FC2', 'FC3', 'FC4', 'FC5', 'FC6', 'FC7', 'FC8', 'FC9', 'FC10'
-    ];
-
-    private const VALID_RANKS = ['R1', 'R2', 'R3', 'R4', 'R5'];
-
-    private const VALID_TRAP_PREFERENCES = ['1', '2', 'both', 'n/a'];
+    // Use constants from Furnace model instead of duplicating
+    private const VALID_GEAR_LEVELS = Furnace::VALID_GEAR_LEVELS;
+    private const VALID_LEVELS = Furnace::VALID_LEVELS;
+    private const VALID_RANKS = Furnace::VALID_RANKS;
+    private const VALID_TRAP_PREFERENCES = Furnace::VALID_TRAP_PREFERENCES;
 
     public function generateTemplateXls(): string
     {

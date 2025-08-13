@@ -1,6 +1,20 @@
 import { MapObject } from './MapObject.js';
 
 export class Furnace extends MapObject {
+  // Validation constants - centralized from backend
+  static VALID_LEVELS = [
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+    '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
+    '21', '22', '23', '24', '25', '26', '27', '28', '29', '30',
+    'FC1', 'FC2', 'FC3', 'FC4', 'FC5', 'FC6', 'FC7', 'FC8', 'FC9', 'FC10'
+  ];
+
+  static VALID_RANKS = ['R1', 'R2', 'R3', 'R4', 'R5'];
+
+  static VALID_TRAP_PREFERENCES = ['1', '2', 'both', 'n/a'];
+
+  static VALID_STATUSES = ['', 'assigned', 'moved', 'messaged', 'wrong'];
+
   static VALID_GEAR_LEVELS = [
     'Uncommon', 'Uncommon *', 'Rare', 'Rare *', 'Rare **', 'Rare ***',
     'Epic', 'Epic *', 'Epic **', 'Epic ***', 'Epic T1', 'Epic T1 *', 'Epic T1 **', 'Epic T1 ***',
@@ -41,12 +55,12 @@ export class Furnace extends MapObject {
   ) {
     super(x ?? 0, y ?? 0, 2, id);
     this.name = name;
-    this.level = level;
-    this.power = power;
-    this.rank = rank;
-    this.participation = participation;
-    this.trapPref = trapPref;
-    this.status = status;
+    this.level = this.validateLevel(level);
+    this.power = this.validatePower(power);
+    this.rank = this.validateRank(rank);
+    this.participation = this.validateParticipation(participation);
+    this.trapPref = trapPref ? this.validateTrapPref(trapPref) : '';
+    this.status = this.validateStatus(status);
     this.locked = locked;
     
     // Set chief gear properties with validation
@@ -65,13 +79,56 @@ export class Furnace extends MapObject {
     this.caneCharms = this.validateCharms(caneCharms);
   }
 
+  // Validation methods
+  validateLevel(level) {
+    if (!Furnace.VALID_LEVELS.includes(level)) {
+      throw new Error(`Invalid level: ${level}. Must be one of: ${Furnace.VALID_LEVELS.join(', ')}`);
+    }
+    return level;
+  }
+
+  validatePower(power) {
+    if (power <= 0) {
+      throw new Error(`Power must be a positive integer, got: ${power}`);
+    }
+    return power;
+  }
+
+  validateRank(rank) {
+    if (!Furnace.VALID_RANKS.includes(rank)) {
+      throw new Error(`Invalid rank: ${rank}. Must be one of: ${Furnace.VALID_RANKS.join(', ')}`);
+    }
+    return rank;
+  }
+
+  validateParticipation(participation) {
+    if (participation !== null && (participation < 0 || participation > 4)) {
+      throw new Error(`Participation must be between 0 and 4, got: ${participation}`);
+    }
+    return participation;
+  }
+
+  validateTrapPref(trapPref) {
+    if (!Furnace.VALID_TRAP_PREFERENCES.includes(trapPref)) {
+      throw new Error(`Invalid trap preference: ${trapPref}. Must be one of: ${Furnace.VALID_TRAP_PREFERENCES.join(', ')}`);
+    }
+    return trapPref;
+  }
+
+  validateStatus(status) {
+    if (!Furnace.VALID_STATUSES.includes(status)) {
+      throw new Error(`Invalid status: ${status}. Must be one of: ${Furnace.VALID_STATUSES.join(', ')}`);
+    }
+    return status;
+  }
+
   validateGearLevel(level) {
     if (level === null || level === '') {
       return null;
     }
     
     if (!Furnace.VALID_GEAR_LEVELS.includes(level)) {
-      throw new Error(`Invalid gear level: ${level}`);
+      throw new Error(`Invalid gear level: ${level}. Must be one of: ${Furnace.VALID_GEAR_LEVELS.join(', ')}`);
     }
     
     return level;
@@ -82,11 +139,15 @@ export class Furnace extends MapObject {
       return null;
     }
     
-    const charmArray = charms.split(',').map(c => c.trim());
-    for (const charm of charmArray) {
-      const charmLevel = parseInt(charm);
-      if (isNaN(charmLevel) || charmLevel < 0 || charmLevel > Furnace.MAX_CHARM_LEVEL) {
-        throw new Error(`Invalid charm level: ${charm}`);
+    const charmLevels = charms.split(',').map(c => c.trim());
+    if (charmLevels.length !== 3) {
+      throw new Error(`Charms must have exactly 3 comma-separated values: ${charms}`);
+    }
+    
+    for (const charmLevel of charmLevels) {
+      const level = parseInt(charmLevel);
+      if (isNaN(level) || level < 1 || level > Furnace.MAX_CHARM_LEVEL) {
+        throw new Error(`Invalid charm level: ${charmLevel}. Must be between 1 and ${Furnace.MAX_CHARM_LEVEL}.`);
       }
     }
     
@@ -168,12 +229,12 @@ export class Furnace extends MapObject {
 
   // Setters
   setName(name) { this.name = name; }
-  setLevel(level) { this.level = level; }
-  setPower(power) { this.power = power; }
-  setRank(rank) { this.rank = rank; }
-  setParticipation(participation) { this.participation = participation; }
-  setTrapPref(trapPref) { this.trapPref = trapPref; }
-  setStatus(status) { this.status = status; }
+  setLevel(level) { this.level = this.validateLevel(level); }
+  setPower(power) { this.power = this.validatePower(power); }
+  setRank(rank) { this.rank = this.validateRank(rank); }
+  setParticipation(participation) { this.participation = this.validateParticipation(participation); }
+  setTrapPref(trapPref) { this.trapPref = this.validateTrapPref(trapPref); }
+  setStatus(status) { this.status = this.validateStatus(status); }
   setLocked(locked) { this.locked = locked; }
   
   // Chief gear setters
