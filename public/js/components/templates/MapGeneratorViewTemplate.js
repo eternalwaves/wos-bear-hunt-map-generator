@@ -58,9 +58,12 @@ export function MapGeneratorViewTemplate(component) {
       <!-- Furnace Table -->
       <furnace-table-view
         .furnaces=${component.furnaces}
+        .hasUnsavedChanges=${(furnace) => component.logic.hasUnsavedChanges(furnace)}
+        .markFurnaceAsSaved=${(furnace) => component.logic.markFurnaceAsSaved(furnace)}
         @furnace-added=${component._onFurnaceAdded}
         @furnace-updated=${component._onFurnaceUpdated}
         @furnace-deleted=${component._onFurnaceDeleted}
+        @furnace-save=${component._onFurnaceSave}
       ></furnace-table-view>
 
       <!-- Sorting Priority Selection -->

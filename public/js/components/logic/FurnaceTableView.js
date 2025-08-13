@@ -40,9 +40,15 @@ export class FurnaceTableViewLogic {
   }
 
   onSave(furnace) {
+    // Dispatch event to parent
     this.component.dispatchEvent(new CustomEvent('furnace-save', {
       detail: furnace
     }));
+    
+    // Mark furnace as saved using the function passed from parent
+    if (this.component.markFurnaceAsSaved) {
+      this.component.markFurnaceAsSaved(furnace);
+    }
   }
 
   onEdit(furnace) {

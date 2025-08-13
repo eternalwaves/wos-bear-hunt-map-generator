@@ -99,22 +99,32 @@ export class MapGeneratorViewLogic {
         this.newOccupied = new Set(this.occupied);
         this.cellSize = mapData.cellSize || 50;
 
-        // Store original saved gear data for each furnace
-        this.originalSavedGearData = {};
+        // Store original saved data for each furnace (for change tracking)
+        this.originalSavedData = {};
         this.furnaces.forEach(furnace => {
-          this.originalSavedGearData[furnace.id] = {
-            cap_level: furnace.capLevel || '',
-            cap_charms: furnace.capCharms || '',
-            watch_level: furnace.watchLevel || '',
-            watch_charms: furnace.watchCharms || '',
-            vest_level: furnace.vestLevel || '',
-            vest_charms: furnace.vestCharms || '',
-            pants_level: furnace.pantsLevel || '',
-            pants_charms: furnace.pantsCharms || '',
-            ring_level: furnace.ringLevel || '',
-            ring_charms: furnace.ringCharms || '',
-            cane_level: furnace.caneLevel || '',
-            cane_charms: furnace.caneCharms || ''
+          this.originalSavedData[furnace.id] = {
+            name: this.normalizeForComparison(furnace.name),
+            level: this.normalizeForComparison(furnace.level),
+            power: this.normalizeForComparison(furnace.power),
+            rank: this.normalizeForComparison(furnace.rank),
+            participation: this.normalizeForComparison(furnace.participation),
+            trapPref: this.normalizeForComparison(furnace.trapPref),
+            x: this.normalizeForComparison(furnace.x),
+            y: this.normalizeForComparison(furnace.y),
+            status: this.normalizeForComparison(furnace.status),
+            locked: this.normalizeForComparison(furnace.locked),
+            capLevel: this.normalizeForComparison(furnace.capLevel),
+            capCharms: this.normalizeForComparison(furnace.capCharms),
+            watchLevel: this.normalizeForComparison(furnace.watchLevel),
+            watchCharms: this.normalizeForComparison(furnace.watchCharms),
+            vestLevel: this.normalizeForComparison(furnace.vestLevel),
+            vestCharms: this.normalizeForComparison(furnace.vestCharms),
+            pantsLevel: this.normalizeForComparison(furnace.pantsLevel),
+            pantsCharms: this.normalizeForComparison(furnace.pantsCharms),
+            ringLevel: this.normalizeForComparison(furnace.ringLevel),
+            ringCharms: this.normalizeForComparison(furnace.ringCharms),
+            caneLevel: this.normalizeForComparison(furnace.caneLevel),
+            caneCharms: this.normalizeForComparison(furnace.caneCharms)
           };
         });
 
@@ -157,13 +167,94 @@ export class MapGeneratorViewLogic {
     this.component.hasData = this.furnaces.length > 0 || this.traps.length > 0 || this.miscObjects.length > 0;
   }
 
+  // Helper function to normalize values for comparison
+  normalizeForComparison(value) {
+    // Treat null and empty string as equivalent
+    if (value === null || value === '') {
+      return '';
+    }
+    
+    // Treat NaN and 0 as equivalent
+    if (isNaN(value) || value === 0) {
+      return 0;
+    }
+    
+    return value;
+  }
+
+  hasUnsavedChanges(furnace) {
+    if (!furnace || !furnace.id || !this.originalSavedData[furnace.id]) {
+      return false;
+    }
+
+    const original = this.originalSavedData[furnace.id];
+    
+    // Compare all properties using normalized values
+    const hasChanges = (
+      this.normalizeForComparison(furnace.name) !== this.normalizeForComparison(original.name) ||
+      this.normalizeForComparison(furnace.level) !== this.normalizeForComparison(original.level) ||
+      this.normalizeForComparison(furnace.power) !== this.normalizeForComparison(original.power) ||
+      this.normalizeForComparison(furnace.rank) !== this.normalizeForComparison(original.rank) ||
+      this.normalizeForComparison(furnace.participation) !== this.normalizeForComparison(original.participation) ||
+      this.normalizeForComparison(furnace.trapPref) !== this.normalizeForComparison(original.trapPref) ||
+      this.normalizeForComparison(furnace.x) !== this.normalizeForComparison(original.x) ||
+      this.normalizeForComparison(furnace.y) !== this.normalizeForComparison(original.y) ||
+      this.normalizeForComparison(furnace.status) !== this.normalizeForComparison(original.status) ||
+      this.normalizeForComparison(furnace.locked) !== this.normalizeForComparison(original.locked) ||
+      this.normalizeForComparison(furnace.capLevel) !== this.normalizeForComparison(original.capLevel) ||
+      this.normalizeForComparison(furnace.capCharms) !== this.normalizeForComparison(original.capCharms) ||
+      this.normalizeForComparison(furnace.watchLevel) !== this.normalizeForComparison(original.watchLevel) ||
+      this.normalizeForComparison(furnace.watchCharms) !== this.normalizeForComparison(original.watchCharms) ||
+      this.normalizeForComparison(furnace.vestLevel) !== this.normalizeForComparison(original.vestLevel) ||
+      this.normalizeForComparison(furnace.vestCharms) !== this.normalizeForComparison(original.vestCharms) ||
+      this.normalizeForComparison(furnace.pantsLevel) !== this.normalizeForComparison(original.pantsLevel) ||
+      this.normalizeForComparison(furnace.pantsCharms) !== this.normalizeForComparison(original.pantsCharms) ||
+      this.normalizeForComparison(furnace.ringLevel) !== this.normalizeForComparison(original.ringLevel) ||
+      this.normalizeForComparison(furnace.ringCharms) !== this.normalizeForComparison(original.ringCharms) ||
+      this.normalizeForComparison(furnace.caneLevel) !== this.normalizeForComparison(original.caneLevel) ||
+      this.normalizeForComparison(furnace.caneCharms) !== this.normalizeForComparison(original.caneCharms)
+    );
+    
+    return hasChanges;
+  }
+
+  markFurnaceAsSaved(furnace) {
+    if (furnace && furnace.id) {
+      // Update the original saved data to match current values (normalized)
+      this.originalSavedData[furnace.id] = {
+        name: this.normalizeForComparison(furnace.name),
+        level: this.normalizeForComparison(furnace.level),
+        power: this.normalizeForComparison(furnace.power),
+        rank: this.normalizeForComparison(furnace.rank),
+        participation: this.normalizeForComparison(furnace.participation),
+        trapPref: this.normalizeForComparison(furnace.trapPref),
+        x: this.normalizeForComparison(furnace.x),
+        y: this.normalizeForComparison(furnace.y),
+        status: this.normalizeForComparison(furnace.status),
+        locked: this.normalizeForComparison(furnace.locked),
+        capLevel: this.normalizeForComparison(furnace.capLevel),
+        capCharms: this.normalizeForComparison(furnace.capCharms),
+        watchLevel: this.normalizeForComparison(furnace.watchLevel),
+        watchCharms: this.normalizeForComparison(furnace.watchCharms),
+        vestLevel: this.normalizeForComparison(furnace.vestLevel),
+        vestCharms: this.normalizeForComparison(furnace.vestCharms),
+        pantsLevel: this.normalizeForComparison(furnace.pantsLevel),
+        pantsCharms: this.normalizeForComparison(furnace.pantsCharms),
+        ringLevel: this.normalizeForComparison(furnace.ringLevel),
+        ringCharms: this.normalizeForComparison(furnace.ringCharms),
+        caneLevel: this.normalizeForComparison(furnace.caneLevel),
+        caneCharms: this.normalizeForComparison(furnace.caneCharms)
+      };
+    }
+  }
+
   clearMapData() {
     this.furnaces = [];
     this.traps = [];
     this.miscObjects = [];
     this.occupied = new Set();
     this.newOccupied = new Set();
-    this.originalSavedGearData = {};
+    this.originalSavedData = {};
     this.component.svgContent = '';
     this.component.mapGenerated = false;
     this.updateChildComponents();

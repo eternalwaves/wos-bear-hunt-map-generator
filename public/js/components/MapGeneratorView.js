@@ -322,6 +322,15 @@ export class MapGeneratorView extends LitElement {
     this.logic.onFurnaceDeleted(event);
   }
 
+  _onFurnaceSave(event) {
+    // Mark the furnace as saved after successful save operation
+    const furnace = event.detail;
+    this.logic.markFurnaceAsSaved(furnace);
+    
+    // Also call the updated handler to refresh data
+    this.logic.onFurnaceUpdated(event);
+  }
+
   _onFurnacesUploaded(event) {
     this.logic.onFurnacesUploaded(event);
   }

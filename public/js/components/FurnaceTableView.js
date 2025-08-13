@@ -8,7 +8,9 @@ export class FurnaceTableView extends LitElement {
   static properties = {
     furnaces: { type: Array },
     showForm: { type: Boolean },
-    showGearColumns: { type: Boolean }
+    showGearColumns: { type: Boolean },
+    hasUnsavedChanges: { type: Function },
+    markFurnaceAsSaved: { type: Function }
   };
 
   constructor() {
@@ -17,6 +19,8 @@ export class FurnaceTableView extends LitElement {
     this.showForm = false;
     this.showGearColumns = false;
     this.logic = new FurnaceTableViewLogic(this);
+    this.hasUnsavedChanges = null;
+    this.markFurnaceAsSaved = null;
   }
 
   static styles = css`
@@ -81,10 +85,6 @@ export class FurnaceTableView extends LitElement {
       color: #495057;
     }
     
-    .furnace-table tr:hover {
-      background-color: #f8f9fa;
-    }
-    
     /* Input and select styles */
     .furnace-table input,
     .furnace-table select {
@@ -132,19 +132,19 @@ export class FurnaceTableView extends LitElement {
     }
     
     .wrong {
-      background-color: #FF2A04 !important;
+      background-color: #FF2A04;
     }
     
     .messaged {
-      background-color: #FFAF3D !important;
+      background-color: #FFAF3D;
     }
     
     .moved {
-      background-color: #00E200 !important;
+      background-color: #00E200;
     }
     
     .assigned {
-      background-color: #2DCCFF !important;
+      background-color: #2DCCFF;
     }
     
     /* Gear cell styles */
@@ -262,7 +262,12 @@ export class FurnaceTableView extends LitElement {
     if (!furnace) return '';
     
     const classes = [];
-    if (furnace.unsaved) classes.push('unsaved');
+    
+    // Check if furnace has unsaved changes using the function passed from parent
+    if (this.hasUnsavedChanges && this.hasUnsavedChanges(furnace)) {
+      classes.push('unsaved');
+    }
+    
     if (furnace.status) classes.push(furnace.status);
     
     return classes.join(' ');

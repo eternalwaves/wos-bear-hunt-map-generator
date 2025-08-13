@@ -54,7 +54,7 @@ export function FurnaceTableViewTemplate(component) {
                 <input type="text" 
                        class="edit-name" 
                        value="${furnace.name}" 
-                       @change=${(e) => component._onNameChange(e, furnace)}>
+                       @input=${(e) => component._onNameChange(e, furnace)}>
               </td>
               <td>
                 <select class="edit-level" @change=${(e) => component._onLevelChange(e, furnace)}>
@@ -68,7 +68,7 @@ export function FurnaceTableViewTemplate(component) {
                 <input type="number" 
                        class="edit-power" 
                        value="${furnace.power}" 
-                       @change=${(e) => component._onPowerChange(e, furnace)}
+                       @input=${(e) => component._onPowerChange(e, furnace)}
                        min="0">
               </td>
               ${component.showGearColumns ? html`
@@ -121,7 +121,7 @@ export function FurnaceTableViewTemplate(component) {
                 <input type="number" 
                        class="edit-participation" 
                        value="${furnace.participation}" 
-                       @change=${(e) => component._onParticipationChange(e, furnace)}
+                       @input=${(e) => component._onParticipationChange(e, furnace)}
                        min="0" max="4">
               </td>
               <td>
@@ -143,7 +143,7 @@ export function FurnaceTableViewTemplate(component) {
                 <input type="number" 
                        class="edit-coord" 
                        value="${furnace.y}" 
-                       @change=${(e) => component._onYChange(e, furnace)}
+                       @input=${(e) => component._onYChange(e, furnace)}
                        min="0">
               </td>
               <td class="shiftFurnaceBtns">
