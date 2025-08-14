@@ -119,6 +119,13 @@ export class Furnace extends MapObject {
     if (!Furnace.VALID_STATUSES.includes(status)) {
       throw new Error(`Invalid status: ${status}. Must be one of: ${Furnace.VALID_STATUSES.join(', ')}`);
     }
+    
+      // Auto-assign status to "assigned" if both X and Y are set
+      if (this.x && this.y && !status) {
+      return 'assigned';
+    } else if (!this.x || !this.y) {
+      return '';
+    }
     return status;
   }
 

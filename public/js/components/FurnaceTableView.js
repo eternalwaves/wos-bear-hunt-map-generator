@@ -346,6 +346,8 @@ export class FurnaceTableView extends LitElement {
       // Auto-assign status to "assigned" if both X and Y are set
       if (furnace.x && furnace.y && !furnace.status) {
         furnace.status = 'assigned';
+      } else if (!furnace.x || !furnace.y) {
+        furnace.status = '';
       }
       this.requestUpdate();
       this._notifyFurnaceChanged();
@@ -358,6 +360,8 @@ export class FurnaceTableView extends LitElement {
       // Auto-assign status to "assigned" if both X and Y are set
       if (furnace.x && furnace.y && !furnace.status) {
         furnace.status = 'assigned';
+      } else if (!furnace.x || !furnace.y) {
+        furnace.status = '';
       }
       this.requestUpdate();
       this._notifyFurnaceChanged();
