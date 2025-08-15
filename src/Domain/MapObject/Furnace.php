@@ -27,8 +27,22 @@ class Furnace extends MapObject
     private ?string $ringCharms;
     private ?string $caneCharms;
 
+    // Validation constants - centralized from ExcelService
+    public const VALID_LEVELS = [
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+        '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
+        '21', '22', '23', '24', '25', '26', '27', '28', '29', '30',
+        'FC1', 'FC2', 'FC3', 'FC4', 'FC5', 'FC6', 'FC7', 'FC8', 'FC9', 'FC10'
+    ];
+
+    public const VALID_RANKS = ['R1', 'R2', 'R3', 'R4', 'R5'];
+
+    public const VALID_TRAP_PREFERENCES = ['1', '2', 'both', 'n/a'];
+
+    public const VALID_STATUSES = ['', 'assigned', 'moved', 'messaged', 'wrong'];
+
     // Valid gear levels in order from lowest to highest
-    private const VALID_GEAR_LEVELS = [
+    public const VALID_GEAR_LEVELS = [
         'Uncommon', 'Uncommon *', 'Rare', 'Rare *', 'Rare **', 'Rare ***',
         'Epic', 'Epic *', 'Epic **', 'Epic ***', 'Epic T1', 'Epic T1 *', 'Epic T1 **', 'Epic T1 ***',
         'Mythic', 'Mythic *', 'Mythic **', 'Mythic ***', 'Mythic T1', 'Mythic T1 *', 'Mythic T1 **', 'Mythic T1 ***',
@@ -68,12 +82,12 @@ class Furnace extends MapObject
     ) {
         parent::__construct($x ?? 0, $y ?? 0, 2, $id);
         $this->name = $name;
-        $this->level = $level;
-        $this->power = $power;
-        $this->rank = $rank;
-        $this->participation = $participation;
-        $this->trapPref = $trapPref;
-        $this->status = $status;
+        $this->level = $this->validateLevel($level);
+        $this->power = $this->validatePower($power);
+        $this->rank = $this->validateRank($rank);
+        $this->participation = $this->validateParticipation($participation);
+        $this->trapPref = $trapPref ? $this->validateTrapPref($trapPref) : '';
+        $this->status = $this->validateStatus($status);
         $this->locked = $locked;
         
         // Set chief gear properties with validation
@@ -92,6 +106,58 @@ class Furnace extends MapObject
         $this->caneCharms = $this->validateCharms($caneCharms);
     }
 
+    // Validation methods
+    private function validateLevel(string $level): string
+    {
+        $normalizedLevel = trim(strtoupper($level));
+        if (!in_array($normalizedLevel, self::VALID_LEVELS)) {
+            throw new \InvalidArgumentException("Invalid level: {$level}. Must be one of: " . implode(', ', self::VALID_LEVELS));
+        }
+        return $normalizedLevel;
+    }
+
+    private function validatePower(int $power): int
+    {
+        if ($power <= 0) {
+            throw new \InvalidArgumentException("Power must be a positive integer, got: {$power}");
+        }
+        return $power;
+    }
+
+    private function validateRank(string $rank): string
+    {
+        $normalizedRank = trim(strtoupper($rank));
+        if (!in_array($normalizedRank, self::VALID_RANKS)) {
+            throw new \InvalidArgumentException("Invalid rank: {$rank}. Must be one of: " . implode(', ', self::VALID_RANKS));
+        }
+        return $normalizedRank;
+    }
+
+    private function validateParticipation(?int $participation): ?int
+    {
+        if ($participation !== null && ($participation < 0 || $participation > 4)) {
+            throw new \InvalidArgumentException("Participation must be between 0 and 4, got: {$participation}");
+        }
+        return $participation;
+    }
+
+    private function validateTrapPref(string $trapPref): string
+    {
+        $normalizedTrapPref = trim(strtolower($trapPref));
+        if (!in_array($normalizedTrapPref, self::VALID_TRAP_PREFERENCES)) {
+            throw new \InvalidArgumentException("Invalid trap preference: {$trapPref}. Must be one of: " . implode(', ', self::VALID_TRAP_PREFERENCES));
+        }
+        return $normalizedTrapPref;
+    }
+
+    private function validateStatus(string $status): string
+    {
+        if (!in_array($status, self::VALID_STATUSES)) {
+            throw new \InvalidArgumentException("Invalid status: {$status}. Must be one of: " . implode(', ', self::VALID_STATUSES));
+        }
+        return $status;
+    }
+
     private function validateGearLevel(?string $level): ?string
     {
         if ($level === null || $level === '') {
@@ -99,7 +165,7 @@ class Furnace extends MapObject
         }
         
         if (!in_array($level, self::VALID_GEAR_LEVELS)) {
-            throw new \InvalidArgumentException("Invalid gear level: {$level}");
+            throw new \InvalidArgumentException("Invalid gear level: {$level}. Must be one of: " . implode(', ', self::VALID_GEAR_LEVELS));
         }
         
         return $level;
@@ -248,7 +314,7 @@ class Furnace extends MapObject
 
     public function setLevel(string $level): void
     {
-        $this->level = $level;
+        $this->level = $this->validateLevel($level);
     }
 
     public function getPower(): int
@@ -258,7 +324,7 @@ class Furnace extends MapObject
 
     public function setPower(int $power): void
     {
-        $this->power = $power;
+        $this->power = $this->validatePower($power);
     }
 
     public function getRank(): string
@@ -268,7 +334,7 @@ class Furnace extends MapObject
 
     public function setRank(string $rank): void
     {
-        $this->rank = $rank;
+        $this->rank = $this->validateRank($rank);
     }
 
     public function getParticipation(): ?int
@@ -278,7 +344,7 @@ class Furnace extends MapObject
 
     public function setParticipation(?int $participation): void
     {
-        $this->participation = $participation;
+        $this->participation = $this->validateParticipation($participation);
     }
 
     public function getTrapPref(): string
@@ -288,7 +354,7 @@ class Furnace extends MapObject
 
     public function setTrapPref(string $trapPref): void
     {
-        $this->trapPref = $trapPref;
+        $this->trapPref = $this->validateTrapPref($trapPref);
     }
 
     public function getStatus(): string
@@ -298,7 +364,7 @@ class Furnace extends MapObject
 
     public function setStatus(string $status): void
     {
-        $this->status = $status;
+        $this->status = $this->validateStatus($status);
     }
 
     public function isLocked(): bool

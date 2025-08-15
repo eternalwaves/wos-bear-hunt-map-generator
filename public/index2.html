@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bear Hunt Map Generator - Lit Version</title>
+    <link rel="stylesheet" href="styles2.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div class="loading">
+            <h2>Loading...</h2>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Lit framework
+        import { LitElement, html, css, unsafeCSS } from 'https://esm.sh/lit@2.7.0';
+        import { unsafeHTML } from 'https://esm.sh/lit@2.7.0/directives/unsafe-html.js';
+        
+        // Import the main application component
+        import './public/js/components/MapGeneratorView.js';
+        
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = document.getElementById('app');
+            
+            // Create and append the main component
+            const mapGenerator = document.createElement('map-generator-view');
+            app.innerHTML = '';
+            app.appendChild(mapGenerator);
+        });
+    </script>
+</body>
+</html>

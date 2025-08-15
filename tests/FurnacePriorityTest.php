@@ -105,4 +105,21 @@ class FurnacePriorityTest extends TestCase
         // Test with both null values
         $this->assertEquals(-1.0, $furnace->getMeanGearLevelIndex(null, null));
     }
+
+    public function testValidationConstantsAreAccessible()
+    {
+        // Test that validation constants are accessible and contain expected values
+        $this->assertIsArray(Furnace::VALID_LEVELS);
+        $this->assertIsArray(Furnace::VALID_RANKS);
+        $this->assertIsArray(Furnace::VALID_TRAP_PREFERENCES);
+        $this->assertIsArray(Furnace::VALID_STATUSES);
+        $this->assertIsArray(Furnace::VALID_GEAR_LEVELS);
+        
+        // Test that constants contain expected values
+        $this->assertContains("FC1", Furnace::VALID_LEVELS);
+        $this->assertContains("R1", Furnace::VALID_RANKS);
+        $this->assertContains("both", Furnace::VALID_TRAP_PREFERENCES);
+        $this->assertContains("assigned", Furnace::VALID_STATUSES);
+        $this->assertContains("Legendary T1", Furnace::VALID_GEAR_LEVELS);
+    }
 } 
