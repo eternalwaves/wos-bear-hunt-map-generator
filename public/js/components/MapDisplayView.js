@@ -230,35 +230,36 @@ export class MapDisplayView extends LitElement {
     // Wait for the SVG to be rendered
     this.updateComplete.then(() => {
       const mapElement = this.shadowRoot?.querySelector('#map');
-      if (!mapElement) return;
-
-      // Find all furnace SVG elements
-      const furnaceElements = mapElement.querySelectorAll('rect[data-obj-id^="furnace_"]');
+      if (!mapElement) {
+        return;
+      }
       
+      const furnaceElements = mapElement.querySelectorAll('rect[data-obj-id^="furnace_"]');
       furnaceElements.forEach(element => {
         const furnaceId = element.getAttribute('data-obj-id');
         const furnace = this.furnaces.find(f => f.id === furnaceId);
-        
         if (furnace) {
           const hasUnsaved = this.hasUnsavedChanges(furnace);
           
+          // Apply/remove unsaved class on the rectangle
           if (hasUnsaved) {
             element.classList.add('unsaved');
-            
-            // Also apply unsaved class to associated text labels
-            const textElements = mapElement.querySelectorAll(`text[data-obj-id="${furnaceId}"]`);
-            textElements.forEach(textElement => {
-              textElement.classList.add('unsaved');
-            });
           } else {
             element.classList.remove('unsaved');
-            
-            // Remove unsaved class from associated text labels
-            const textElements = mapElement.querySelectorAll(`text[data-obj-id="${furnaceId}"]`);
-            textElements.forEach(textElement => {
-              textElement.classList.remove('unsaved');
-            });
           }
+          
+          // Apply/remove unsaved class on ALL text elements for this furnace
+          const textElements = mapElement.querySelectorAll(`text[data-obj-id="${furnaceId}"]`);
+          textElements.forEach(textElement => {
+            if (textElement.classList.contains('label')) {
+                textElement.textContent = furnace.name;
+            }
+            if (hasUnsaved) {
+              textElement.classList.add('unsaved');
+            } else {
+              textElement.classList.remove('unsaved');
+            }
+          });
         }
       });
     });

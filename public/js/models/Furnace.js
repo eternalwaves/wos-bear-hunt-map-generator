@@ -120,8 +120,8 @@ export class Furnace extends MapObject {
       throw new Error(`Invalid status: ${status}. Must be one of: ${Furnace.VALID_STATUSES.join(', ')}`);
     }
     
-      // Auto-assign status to "assigned" if both X and Y are set
-      if (this.x && this.y && !status) {
+    // Auto-assign status to "assigned" if both X and Y are set
+    if (this.x && this.y && !status) {
       return 'assigned';
     } else if (!this.x || !this.y) {
       return '';
@@ -256,7 +256,134 @@ export class Furnace extends MapObject {
   setVestCharms(vestCharms) { this.vestCharms = this.validateCharms(vestCharms); }
   setPantsCharms(pantsCharms) { this.pantsCharms = this.validateCharms(pantsCharms); }
   setRingCharms(ringCharms) { this.ringCharms = this.validateCharms(ringCharms); }
-  setCaneCharms(caneCharms) { this.caneCharms = this.validateCharms(caneCharms); }
+  setCaneCharms(charms) {
+    this.caneCharms = this.validateCharms(charms);
+  }
+
+  // API Methods
+  async save(mapId, version = null) {
+    const requestBody = {
+      map_id: mapId,
+      id: this.id,
+      name: this.name,
+      level: this.level,
+      power: this.power,
+      rank: this.rank,
+      participation: this.participation,
+      trap_pref: this.trapPref,
+      x: this.x,
+      y: this.y,
+      status: this.status,
+      locked: this.locked,
+      cap_level: this.capLevel,
+      cap_charms: this.capCharms,
+      watch_level: this.watchLevel,
+      watch_charms: this.watchCharms,
+      vest_level: this.vestLevel,
+      vest_charms: this.vestCharms,
+      pants_level: this.pantsLevel,
+      pants_charms: this.pantsCharms,
+      ring_level: this.ringLevel,
+      ring_charms: this.ringCharms,
+      cane_level: this.caneLevel,
+      cane_charms: this.caneCharms
+    };
+
+    if (version) {
+      requestBody.version = version;
+    }
+
+    const response = await fetch('/api.php?action=update_furnace', {
+      method: 'PUT',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+
+    const data = await response.json();
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to save furnace');
+    }
+
+    return data;
+  }
+
+  async setLocked(locked, mapId, version = null) {
+    const requestBody = {
+      map_id: mapId,
+      furnace_id: this.id,
+      locked: locked
+    };
+
+    if (version) {
+      requestBody.version = version;
+    }
+
+    const response = await fetch('/api.php?action=set_furnace_locked', {
+      method: 'PUT',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+
+    const data = await response.json();
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to update lock status');
+    }
+
+    this.locked = locked;
+    return data;
+  }
+
+  async updateStatus(status, mapId, version = null) {
+    const requestBody = {
+      map_id: mapId,
+      furnace_id: this.id,
+      status: status
+    };
+
+    if (version) {
+      requestBody.version = version;
+    }
+
+    const response = await fetch('/api.php?action=update_furnace_status', {
+      method: 'PUT',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+
+    const data = await response.json();
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to update status');
+    }
+
+    this.status = status;
+    return data;
+  }
+
+  async delete(mapId, version = null) {
+    const formData = new FormData();
+    formData.append('map_id', mapId);
+    formData.append('furnace_id', this.id);
+    
+    if (version) {
+      formData.append('version', version);
+    }
+
+    const response = await fetch('/api.php?action=delete_furnace', {
+      method: 'DELETE',
+      cache: 'no-store',
+      body: formData
+    });
+
+    const data = await response.json();
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to delete furnace');
+    }
+
+    return data;
+  }
 
   getType() {
     return 'furnace';

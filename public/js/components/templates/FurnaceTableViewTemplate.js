@@ -136,7 +136,7 @@ export function FurnaceTableViewTemplate(component) {
                 <input type="number" 
                        class="edit-coord" 
                        value="${furnace.x}" 
-                       @change=${(e) => component._onXChange(e, furnace)}
+                       @input=${(e) => component._onXChange(e, furnace)}
                        min="0">
               </td>
               <td>

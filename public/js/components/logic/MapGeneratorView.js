@@ -2,17 +2,12 @@
 import { Furnace } from '../../models/Furnace.js';
 import { Trap } from '../../models/Trap.js';
 import { MiscObject } from '../../models/MiscObject.js';
+import { Map } from '../../models/Map.js';
 
 export class MapGeneratorViewLogic {
   constructor(component) {
     this.component = component;
-    this.furnaces = [];
-    this.traps = [];
-    this.miscObjects = [];
-    this.occupied = new Set();
-    this.newOccupied = new Set();
-    this.cellSize = 50;
-    this.originalSavedGearData = {};
+    this.originalSavedData = {};
     this.currentPrioritySettings = {
       mode: 'simple',
       simpleOrder: ['participation', 'level', 'rank', 'power'],
@@ -29,21 +24,14 @@ export class MapGeneratorViewLogic {
   async loadMaps() {
     this.component.loading = true;
     try {
-      const response = await fetch('/api.php?action=get_all_maps', { cache: 'no-store' });
-      const data = await response.json();
+      const maps = await Map.getAll();
+      this.component.maps = maps;
       
-      if (data.status === 'success') {
-        this.component.maps = data.data || [];
-        
-        // Auto-select first map if only one exists
-        if (this.component.maps.length === 1) {
-          this.component.currentMap = this.component.maps[0];
-          await this.loadVersions();
-          await this.loadObjects();
-        }
-      } else {
-        console.error('Error loading maps:', data.message);
-        this.component.maps = [];
+      // Auto-select first map if only one exists
+      if (maps.length === 1) {
+        this.component.currentMap = maps[0];
+        await this.loadVersions();
+        await this.loadObjects();
       }
     } catch (error) {
       console.error('Failed to load maps:', error);
@@ -57,12 +45,8 @@ export class MapGeneratorViewLogic {
     if (!this.component.currentMap) return;
     
     try {
-      const response = await fetch(`/api.php?action=get_versions&map_id=${this.component.currentMap.id}`, { cache: 'no-store' });
-      const data = await response.json();
-      
-      if (data.status === 'success') {
-        this.component.versions = data.data || [];
-      }
+      const versions = await this.component.currentMap.getVersions();
+      this.component.versions = versions;
     } catch (error) {
       console.error('Failed to load versions:', error);
     }
@@ -75,90 +59,55 @@ export class MapGeneratorViewLogic {
     }
 
     try {
-      let url = `/api.php?action=get_objects&map_id=${this.component.currentMap.id}`;
-      if (this.component.currentVersion) {
-        url += `&version=${this.component.currentVersion}`;
-      }
+      await this.component.currentMap.loadObjects(this.component.currentVersion);
+      
+      // Store original saved data for each furnace (for change tracking)
+      this.originalSavedData = {};
+      this.component.currentMap.getFurnaces().forEach(furnace => {
+        this.originalSavedData[furnace.id] = {
+          name: furnace.name, // Store raw value, not normalized
+          level: furnace.level,
+          power: furnace.power,
+          rank: furnace.rank,
+          participation: furnace.participation,
+          trapPref: furnace.trapPref,
+          x: furnace.x,
+          y: furnace.y,
+          status: furnace.status,
+          locked: furnace.locked,
+          capLevel: furnace.capLevel,
+          capCharms: furnace.capCharms,
+          watchLevel: furnace.watchLevel,
+          watchCharms: furnace.watchCharms,
+          vestLevel: furnace.vestLevel,
+          vestCharms: furnace.vestCharms,
+          pantsLevel: furnace.pantsLevel,
+          pantsCharms: furnace.pantsCharms,
+          ringLevel: furnace.ringLevel,
+          ringCharms: furnace.ringCharms,
+          caneLevel: furnace.caneLevel,
+          caneCharms: furnace.caneCharms
+        };
+      });
 
-      const response = await fetch(url, { cache: 'no-store' });
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        const mapData = data.data;
-        
-        // Convert raw data to model instances
-        this.furnaces = mapData.furnaces.map(f => {
-          const furnace = new Furnace(
-            f.name, f.level, f.power, f.rank, f.participation, f.trap_pref,
-            f.x, f.y, f.id, f.status, f.locked,
-            f.cap_level, f.watch_level, f.vest_level, f.pants_level, f.ring_level, f.cane_level,
-            f.cap_charms, f.watch_charms, f.vest_charms, f.pants_charms, f.ring_charms, f.cane_charms
-          );
-          
-          // Auto-assign status to "assigned" if both X and Y are set but status is empty
-          if (furnace.x && furnace.y && !furnace.status) {
-            furnace.status = 'assigned';
-          }
-          
-          return furnace;
+      // Update child components directly
+      this.updateChildComponents();
+      
+      // Apply priority settings if available
+      const weightedCriteria = this.component.currentMap.getWeightedCriteria();
+      if (weightedCriteria) {
+        this.applyPrioritySettings({
+          mode: 'weighted',
+          weightedCriteria: weightedCriteria
         });
-
-        this.traps = mapData.traps.map(t => new Trap(t.x, t.y, t.id));
-        this.miscObjects = mapData.misc.map(m => new MiscObject(m.name, m.x, m.y, m.size, m.id));
-
-        this.occupied = new Set(Object.keys(mapData.occupied));
-        this.newOccupied = new Set(this.occupied);
-        this.cellSize = mapData.cellSize || 50;
-
-        // Store original saved data for each furnace (for change tracking)
-        this.originalSavedData = {};
-        this.furnaces.forEach(furnace => {
-          this.originalSavedData[furnace.id] = {
-            name: this.normalizeForComparison(furnace.name),
-            level: this.normalizeForComparison(furnace.level),
-            power: this.normalizeForComparison(furnace.power),
-            rank: this.normalizeForComparison(furnace.rank),
-            participation: this.normalizeForComparison(furnace.participation),
-            trapPref: this.normalizeForComparison(furnace.trapPref),
-            x: this.normalizeForComparison(furnace.x),
-            y: this.normalizeForComparison(furnace.y),
-            status: this.normalizeForComparison(furnace.status),
-            locked: this.normalizeForComparison(furnace.locked),
-            capLevel: this.normalizeForComparison(furnace.capLevel),
-            capCharms: this.normalizeForComparison(furnace.capCharms),
-            watchLevel: this.normalizeForComparison(furnace.watchLevel),
-            watchCharms: this.normalizeForComparison(furnace.watchCharms),
-            vestLevel: this.normalizeForComparison(furnace.vestLevel),
-            vestCharms: this.normalizeForComparison(furnace.vestCharms),
-            pantsLevel: this.normalizeForComparison(furnace.pantsLevel),
-            pantsCharms: this.normalizeForComparison(furnace.pantsCharms),
-            ringLevel: this.normalizeForComparison(furnace.ringLevel),
-            ringCharms: this.normalizeForComparison(furnace.ringCharms),
-            caneLevel: this.normalizeForComparison(furnace.caneLevel),
-            caneCharms: this.normalizeForComparison(furnace.caneCharms)
-          };
+      } else {
+        this.applyPrioritySettings({
+          mode: 'simple'
         });
-
-        // Update child components directly
-        this.updateChildComponents();
-        
-        // Apply priority settings if available
-        if (mapData.weightedCriteria) {
-          console.log('Loading weighted criteria:', mapData.weightedCriteria);
-          this.applyPrioritySettings({
-            mode: 'weighted',
-            weightedCriteria: mapData.weightedCriteria
-          });
-        } else {
-          console.log('No weighted criteria found, using simple priority mode');
-          this.applyPrioritySettings({
-            mode: 'simple'
-          });
-        }
-        
-        // Load SVG map
-        await this.loadSVGMap();
       }
+      
+      // Load SVG map
+      await this.loadSVGMap();
     } catch (error) {
       console.error('Failed to load objects:', error);
     }
@@ -168,28 +117,22 @@ export class MapGeneratorViewLogic {
     if (!this.component.currentMap) return;
 
     try {
-      let svgUrl = `/map.svg?map_id=${this.component.currentMap.id}`;
-      if (this.component.currentVersion) {
-        svgUrl += `&version=${this.component.currentVersion}`;
-      }
-
-      const response = await fetch(svgUrl, { cache: 'no-store' });
-      if (response.ok) {
-        const svg = await response.text();
-        this.component.svgContent = svg;
-        this.component.mapGenerated = true;
-      }
+      const svg = await this.component.currentMap.getSVG(this.component.currentVersion);
+      this.component.svgContent = svg;
+      this.component.mapGenerated = true;
     } catch (error) {
       console.error('Failed to load SVG map:', error);
     }
   }
 
   updateChildComponents() {
-    // Directly update component properties instead of dispatching events
-    this.component.furnaces = this.furnaces;
-    this.component.traps = this.traps;
-    this.component.miscObjects = this.miscObjects;
-    this.component.hasData = this.furnaces.length > 0 || this.traps.length > 0 || this.miscObjects.length > 0;
+    // Directly update component properties from the Map model
+    this.component.furnaces = this.component.currentMap.getFurnaces();
+    this.component.traps = this.component.currentMap.getTraps();
+    this.component.miscObjects = this.component.currentMap.getMiscObjects();
+    this.component.hasData = this.component.currentMap.getFurnaces().length > 0 || 
+                            this.component.currentMap.getTraps().length > 0 || 
+                            this.component.currentMap.getMiscObjects().length > 0;
     
     // Force a re-render of the MapDisplayView to update unsaved classes
     this.component.requestUpdate();
@@ -202,8 +145,13 @@ export class MapGeneratorViewLogic {
       return '';
     }
     
-    // Treat NaN and 0 as equivalent
-    if (isNaN(value) || value === 0) {
+    return value;
+  }
+
+  // Helper function to normalize numeric values for comparison
+  normalizeNumericForComparison(value) {
+    // Treat null, empty string, NaN and 0 as equivalent for numeric fields
+    if (value === null || value === '' || isNaN(value) || value === 0) {
       return 0;
     }
     
@@ -211,23 +159,36 @@ export class MapGeneratorViewLogic {
   }
 
   hasUnsavedChanges(furnace) {
+    
     if (!furnace || !furnace.id || !this.originalSavedData[furnace.id]) {
       return false;
     }
 
     const original = this.originalSavedData[furnace.id];
     
-    // Compare all properties using normalized values
+    // Compare string properties (name, level, rank, participation, trapPref, status)
+    const nameChanged = this.normalizeForComparison(furnace.name) !== this.normalizeForComparison(original.name);
+    const levelChanged = this.normalizeForComparison(furnace.level) !== this.normalizeForComparison(original.level);
+    const rankChanged = this.normalizeForComparison(furnace.rank) !== this.normalizeForComparison(original.rank);
+    const participationChanged = this.normalizeForComparison(furnace.participation) !== this.normalizeForComparison(original.participation);
+    const trapPrefChanged = this.normalizeForComparison(furnace.trapPref) !== this.normalizeForComparison(original.trapPref);
+    const statusChanged = this.normalizeForComparison(furnace.status) !== this.normalizeForComparison(original.status);
+    
+    // Compare numeric properties (power, x, y)
+    const powerChanged = this.normalizeNumericForComparison(furnace.power) !== this.normalizeNumericForComparison(original.power);
+    const xChanged = this.normalizeNumericForComparison(furnace.x) !== this.normalizeNumericForComparison(original.x);
+    const yChanged = this.normalizeNumericForComparison(furnace.y) !== this.normalizeNumericForComparison(original.y);
+    
     const hasChanges = (
-      this.normalizeForComparison(furnace.name) !== this.normalizeForComparison(original.name) ||
-      this.normalizeForComparison(furnace.level) !== this.normalizeForComparison(original.level) ||
-      this.normalizeForComparison(furnace.power) !== this.normalizeForComparison(original.power) ||
-      this.normalizeForComparison(furnace.rank) !== this.normalizeForComparison(original.rank) ||
-      this.normalizeForComparison(furnace.participation) !== this.normalizeForComparison(original.participation) ||
-      this.normalizeForComparison(furnace.trapPref) !== this.normalizeForComparison(original.trapPref) ||
-      this.normalizeForComparison(furnace.x) !== this.normalizeForComparison(original.x) ||
-      this.normalizeForComparison(furnace.y) !== this.normalizeForComparison(original.y) ||
-      this.normalizeForComparison(furnace.status) !== this.normalizeForComparison(original.status) ||
+      nameChanged ||
+      levelChanged ||
+      powerChanged ||
+      rankChanged ||
+      participationChanged ||
+      trapPrefChanged ||
+      xChanged ||
+      yChanged ||
+      statusChanged ||
       this.normalizeForComparison(furnace.locked) !== this.normalizeForComparison(original.locked) ||
       this.normalizeForComparison(furnace.capLevel) !== this.normalizeForComparison(original.capLevel) ||
       this.normalizeForComparison(furnace.capCharms) !== this.normalizeForComparison(original.capCharms) ||
@@ -248,30 +209,30 @@ export class MapGeneratorViewLogic {
 
   markFurnaceAsSaved(furnace) {
     if (furnace && furnace.id) {
-      // Update the original saved data to match current values (normalized)
+      // Update the original saved data to match current values (raw, not normalized)
       this.originalSavedData[furnace.id] = {
-        name: this.normalizeForComparison(furnace.name),
-        level: this.normalizeForComparison(furnace.level),
-        power: this.normalizeForComparison(furnace.power),
-        rank: this.normalizeForComparison(furnace.rank),
-        participation: this.normalizeForComparison(furnace.participation),
-        trapPref: this.normalizeForComparison(furnace.trapPref),
-        x: this.normalizeForComparison(furnace.x),
-        y: this.normalizeForComparison(furnace.y),
-        status: this.normalizeForComparison(furnace.status),
-        locked: this.normalizeForComparison(furnace.locked),
-        capLevel: this.normalizeForComparison(furnace.capLevel),
-        capCharms: this.normalizeForComparison(furnace.capCharms),
-        watchLevel: this.normalizeForComparison(furnace.watchLevel),
-        watchCharms: this.normalizeForComparison(furnace.watchCharms),
-        vestLevel: this.normalizeForComparison(furnace.vestLevel),
-        vestCharms: this.normalizeForComparison(furnace.vestCharms),
-        pantsLevel: this.normalizeForComparison(furnace.pantsLevel),
-        pantsCharms: this.normalizeForComparison(furnace.pantsCharms),
-        ringLevel: this.normalizeForComparison(furnace.ringLevel),
-        ringCharms: this.normalizeForComparison(furnace.ringCharms),
-        caneLevel: this.normalizeForComparison(furnace.caneLevel),
-        caneCharms: this.normalizeForComparison(furnace.caneCharms)
+        name: furnace.name,
+        level: furnace.level,
+        power: furnace.power,
+        rank: furnace.rank,
+        participation: furnace.participation,
+        trapPref: furnace.trapPref,
+        x: furnace.x,
+        y: furnace.y,
+        status: furnace.status,
+        locked: furnace.locked,
+        capLevel: furnace.capLevel,
+        capCharms: furnace.capCharms,
+        watchLevel: furnace.watchLevel,
+        watchCharms: furnace.watchCharms,
+        vestLevel: furnace.vestLevel,
+        vestCharms: furnace.vestCharms,
+        pantsLevel: furnace.pantsLevel,
+        pantsCharms: furnace.pantsCharms,
+        ringLevel: furnace.ringLevel,
+        ringCharms: furnace.ringCharms,
+        caneLevel: furnace.caneLevel,
+        caneCharms: furnace.caneCharms
       };
     }
   }
@@ -285,11 +246,7 @@ export class MapGeneratorViewLogic {
   }
 
   clearMapData() {
-    this.furnaces = [];
-    this.traps = [];
-    this.miscObjects = [];
-    this.occupied = new Set();
-    this.newOccupied = new Set();
+    this.component.currentMap = null;
     this.originalSavedData = {};
     this.component.svgContent = '';
     this.component.mapGenerated = false;
@@ -314,66 +271,142 @@ export class MapGeneratorViewLogic {
     this.loadObjects();
   }
 
-  onVersionSaved(event) {
+  async onVersionSaved(event) {
     // Handle version save
     console.log('Version saved:', event.detail);
-    this.loadVersions();
+    try {
+      await this.component.currentMap.saveVersion(event.detail.version);
+      this.loadVersions();
+    } catch (error) {
+      console.error('Failed to save version:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onVersionDeleted(event) {
+  async onVersionDeleted(event) {
     // Handle version deletion
     console.log('Version deleted:', event.detail);
-    this.component.currentVersion = null;
-    this.loadVersions();
-    this.loadObjects();
+    try {
+      await this.component.currentMap.deleteVersion(event.detail.version);
+      this.component.currentVersion = null;
+      this.loadVersions();
+      this.loadObjects();
+    } catch (error) {
+      console.error('Failed to delete version:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onFurnaceAdded(event) {
+  async onFurnaceAdded(event) {
     // Handle furnace added
     console.log('Furnace added:', event.detail);
-    this.loadObjects();
+    try {
+      const furnace = new Furnace(
+        event.detail.name, event.detail.level, event.detail.power, event.detail.rank, event.detail.participation, event.detail.trap_pref,
+        event.detail.x, event.detail.y, null, event.detail.status, event.detail.locked,
+        event.detail.cap_level, event.detail.watch_level, event.detail.vest_level, event.detail.pants_level, event.detail.ring_level, event.detail.cane_level,
+        event.detail.cap_charms, event.detail.watch_charms, event.detail.vest_charms, event.detail.pants_charms, event.detail.ring_charms, event.detail.cane_charms
+      );
+      
+      await furnace.save(this.component.currentMap.id, this.component.currentVersion);
+      this.loadObjects();
+    } catch (error) {
+      console.error('Failed to add furnace:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onFurnaceUpdated(event) {
+  async onFurnaceUpdated(event) {
     // Handle furnace updated
     console.log('Furnace updated:', event.detail);
-    this.loadObjects();
+    try {
+      // The event.detail contains the furnace object directly
+      const furnace = event.detail;
+      if (furnace && furnace.id) {
+        await furnace.save(this.component.currentMap.id, this.component.currentVersion);
+        this.loadObjects();
+      }
+    } catch (error) {
+      console.error('Failed to update furnace:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onFurnaceDeleted(event) {
+  async onFurnaceDeleted(event) {
     // Handle furnace deleted
     console.log('Furnace deleted:', event.detail);
-    this.loadObjects();
+    try {
+      const furnace = this.component.currentMap.furnaceCollection.find(event.detail.furnace_id);
+      if (furnace) {
+        await furnace.delete(this.component.currentMap.id, this.component.currentVersion);
+        this.loadObjects();
+      }
+    } catch (error) {
+      console.error('Failed to delete furnace:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onFurnacesUploaded(event) {
+  async onFurnacesUploaded(event) {
     // Handle furnaces uploaded
     console.log('Furnaces uploaded:', event.detail);
     this.loadObjects();
   }
 
-  onTrapAdded(event) {
+  async onTrapAdded(event) {
     // Handle trap added
     console.log('Trap added:', event.detail);
-    this.loadObjects();
+    try {
+      const trap = new Trap(event.detail.x, event.detail.y);
+      await trap.save(this.component.currentMap.id, this.component.currentVersion);
+      this.loadObjects();
+    } catch (error) {
+      console.error('Failed to add trap:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onTrapDeleted(event) {
+  async onTrapDeleted(event) {
     // Handle trap deleted
     console.log('Trap deleted:', event.detail);
-    this.loadObjects();
+    try {
+      const trap = this.component.currentMap.getTraps().find(t => t.id === event.detail.trap_id);
+      if (trap) {
+        await trap.delete(this.component.currentMap.id, this.component.currentVersion);
+        this.loadObjects();
+      }
+    } catch (error) {
+      console.error('Failed to delete trap:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onObjectAdded(event) {
+  async onObjectAdded(event) {
     // Handle object added
     console.log('Object added:', event.detail);
-    this.loadObjects();
+    try {
+      const miscObject = new MiscObject(event.detail.name, event.detail.x, event.detail.y, event.detail.size);
+      await miscObject.save(this.component.currentMap.id, this.component.currentVersion);
+      this.loadObjects();
+    } catch (error) {
+      console.error('Failed to add object:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onObjectDeleted(event) {
+  async onObjectDeleted(event) {
     // Handle object deleted
     console.log('Object deleted:', event.detail);
-    this.loadObjects();
+    try {
+      const miscObject = this.component.currentMap.getMiscObjects().find(o => o.id === event.detail.object_id);
+      if (miscObject) {
+        await miscObject.delete(this.component.currentMap.id, this.component.currentVersion);
+        this.loadObjects();
+      }
+    } catch (error) {
+      console.error('Failed to delete object:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
   onPriorityChanged(event) {
@@ -384,35 +417,79 @@ export class MapGeneratorViewLogic {
     this.currentPrioritySettings = event.detail;
   }
 
-  onGenerateMap() {
+  async onGenerateMap() {
     // Handle map generation
     console.log('Generate map');
+    try {
+      await this.component.currentMap.furnaceCollection.generateMap(
+        this.component.currentMap.id, 
+        this.component.currentVersion, 
+        this.currentPrioritySettings
+      );
+      this.loadObjects();
+    } catch (error) {
+      console.error('Failed to generate map:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onDownloadCSV() {
+  async onDownloadCSV() {
     // Handle CSV download
     console.log('Download CSV');
+    try {
+      await this.component.currentMap.exportCSV(this.component.currentVersion);
+    } catch (error) {
+      console.error('Failed to download CSV:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onDownloadSVG() {
+  async onDownloadSVG() {
     // Handle SVG download
     console.log('Download SVG');
+    try {
+      await this.component.currentMap.exportSVG(this.component.currentVersion);
+    } catch (error) {
+      console.error('Failed to download SVG:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onDownloadPNG() {
+  async onDownloadPNG() {
     // Handle PNG download
     console.log('Download PNG');
+    try {
+      await this.component.currentMap.exportPNG(this.component.currentVersion);
+    } catch (error) {
+      console.error('Failed to download PNG:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onResetData() {
+  async onResetData() {
     // Handle data reset
     console.log('Reset data');
-    this.clearMapData();
+    try {
+      await this.component.currentMap.resetData(this.component.currentVersion);
+      this.clearMapData();
+    } catch (error) {
+      console.error('Failed to reset data:', error);
+      alert('Error: ' + error.message);
+    }
   }
 
-  onGearSaved(event) {
+  async onGearSaved(event) {
     // Handle gear saved
     console.log('Gear saved:', event.detail);
-    this.loadObjects();
+    try {
+      const furnace = this.component.currentMap.furnaceCollection.find(event.detail.furnace_id);
+      if (furnace) {
+        await furnace.save(this.component.currentMap.id, this.component.currentVersion);
+        this.loadObjects();
+      }
+    } catch (error) {
+      console.error('Failed to save gear:', error);
+      alert('Error: ' + error.message);
+    }
   }
 } 
