@@ -1,6 +1,7 @@
 import { Furnace } from './Furnace.js';
 import { Trap } from './Trap.js';
 import { MiscObject } from './MiscObject.js';
+import { FurnaceCollection } from './FurnaceCollection.js';
 
 export class Map {
   constructor(name, version = '1.0', id = null, cellSize = 50, weightedCriteria = null) {
@@ -11,7 +12,7 @@ export class Map {
     this.weightedCriteria = weightedCriteria;
     this.traps = [];
     this.miscObjects = [];
-    this.furnaces = [];
+    this.furnaceCollection = new FurnaceCollection();
     this.occupiedPositions = new Set();
   }
 
@@ -27,7 +28,7 @@ export class Map {
   getWeightedCriteria() { return this.weightedCriteria; }
   getTraps() { return this.traps; }
   getMiscObjects() { return this.miscObjects; }
-  getFurnaces() { return this.furnaces; }
+  getFurnaces() { return this.furnaceCollection.getAll(); }
   getOccupiedPositions() { return this.occupiedPositions; }
 
   // Setters
@@ -57,7 +58,7 @@ export class Map {
 
   addFurnace(furnace) {
     if (this.canPlaceObject(furnace)) {
-      this.furnaces.push(furnace);
+      this.furnaceCollection.add(furnace);
       this.markPositionsAsOccupied(furnace);
       return true;
     }
@@ -85,9 +86,9 @@ export class Map {
   }
 
   removeFurnace(furnaceId) {
-    const furnace = this.furnaces.find(f => f.getId() === furnaceId);
+    const furnace = this.furnaceCollection.find(furnaceId);
     if (furnace) {
-      this.furnaces = this.furnaces.filter(f => f.getId() !== furnaceId);
+      this.furnaceCollection.remove(furnaceId);
       this.markPositionsAsUnoccupied(furnace);
       return true;
     }
@@ -123,7 +124,7 @@ export class Map {
     return [
       ...this.traps,
       ...this.miscObjects,
-      ...this.furnaces
+      ...this.furnaceCollection.getAll()
     ];
   }
 
@@ -144,7 +145,214 @@ export class Map {
       weightedCriteria: this.weightedCriteria,
       traps: this.traps.map(trap => trap.toArray()),
       miscObjects: this.miscObjects.map(obj => obj.toArray()),
-      furnaces: this.furnaces.map(furnace => furnace.toArray())
+      furnaces: this.furnaceCollection.getAll().map(furnace => furnace.toArray())
     };
+  }
+
+  // Static methods for API interaction
+  static async getAll() {
+    const response = await fetch('/api.php?action=get_all_maps', { cache: 'no-store' });
+    const data = await response.json();
+    
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to load maps');
+    }
+    
+    return data.data.map(mapData => new Map(
+      mapData.name,
+      mapData.version,
+      mapData.id,
+      mapData.cellSize,
+      mapData.weightedCriteria
+    ));
+  }
+
+  static async create(name, cellSize = 50) {
+    const response = await fetch('/api.php?action=create_map', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, cellSize })
+    });
+    
+    const data = await response.json();
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to create map');
+    }
+    
+    return new Map(name, '1.0', data.data.id, cellSize);
+  }
+
+  async getVersions() {
+    const response = await fetch(`/api.php?action=get_versions&map_id=${this.id}`, { cache: 'no-store' });
+    const data = await response.json();
+    
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to load versions');
+    }
+    
+    return data.data || [];
+  }
+
+  async loadObjects(version = null) {
+    let url = `/api.php?action=get_objects&map_id=${this.id}`;
+    if (version) {
+      url += `&version=${version}`;
+    }
+    
+    const response = await fetch(url, { cache: 'no-store' });
+    const data = await response.json();
+    
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to load objects');
+    }
+    
+    const mapData = data.data;
+    
+    // Clear existing objects
+    this.traps = [];
+    this.miscObjects = [];
+    this.furnaceCollection.clear(); // Clear furnace collection
+    this.occupiedPositions = new Set();
+    
+    // Load furnaces
+    if (mapData.furnaces) {
+      const furnaceInstances = mapData.furnaces.map(furnaceData => new Furnace(
+        furnaceData.name,
+        furnaceData.level,
+        furnaceData.power,
+        furnaceData.rank,
+        furnaceData.participation,
+        furnaceData.trap_pref,
+        furnaceData.x,
+        furnaceData.y,
+        furnaceData.id,
+        furnaceData.status,
+        furnaceData.locked,
+        furnaceData.cap_level,
+        furnaceData.watch_level,
+        furnaceData.vest_level,
+        furnaceData.pants_level,
+        furnaceData.ring_level,
+        furnaceData.cane_level,
+        furnaceData.cap_charms,
+        furnaceData.watch_charms,
+        furnaceData.vest_charms,
+        furnaceData.pants_charms,
+        furnaceData.ring_charms,
+        furnaceData.cane_charms
+      ));
+      this.furnaceCollection.addMany(furnaceInstances);
+    }
+    
+    // Load traps
+    if (mapData.traps) {
+      this.traps = mapData.traps.map(trapData => new Trap(trapData.x, trapData.y, trapData.id));
+    }
+    
+    // Load misc objects
+    if (mapData.misc) {
+      this.miscObjects = mapData.misc.map(objData => new MiscObject(
+        objData.name,
+        objData.x,
+        objData.y,
+        objData.size,
+        objData.id
+      ));
+    }
+    
+    // Update occupied positions
+    this.occupiedPositions = new Set(Object.keys(mapData.occupied || {}));
+    this.cellSize = mapData.cellSize || 50;
+    this.weightedCriteria = mapData.weightedCriteria;
+  }
+
+  async getSVG(version = null) {
+    let url = `/map.svg?map_id=${this.id}`;
+    if (version) {
+      url += `&version=${version}`;
+    }
+    
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Failed to load SVG');
+    }
+    
+    return await response.text();
+  }
+
+  async saveVersion(versionName) {
+    const response = await fetch('/api.php?action=save_version', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        map_id: this.id,
+        version: versionName
+      })
+    });
+    
+    const data = await response.json();
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to save version');
+    }
+  }
+
+  async deleteVersion(versionName) {
+    const response = await fetch('/api.php?action=delete_version', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        map_id: this.id,
+        version: versionName
+      })
+    });
+    
+    const data = await response.json();
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to delete version');
+    }
+  }
+
+  async resetData(version = null) {
+    let url = `/api.php?action=reset_furnaces&map_id=${this.id}`;
+    if (version) {
+      url += `&version=${version}`;
+    }
+    
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const data = await response.json();
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Failed to reset data');
+    }
+  }
+
+  async exportCSV(version = null) {
+    let url = `/api.php?action=export_csv&map_id=${this.id}`;
+    if (version) {
+      url += `&version=${version}`;
+    }
+    
+    window.open(url, '_blank');
+  }
+
+  async exportSVG(version = null) {
+    let url = `/api.php?action=export_svg&map_id=${this.id}`;
+    if (version) {
+      url += `&version=${version}`;
+    }
+    
+    window.open(url, '_blank');
+  }
+
+  async exportPNG(version = null) {
+    let url = `/api.php?action=export_png&map_id=${this.id}`;
+    if (version) {
+      url += `&version=${version}`;
+    }
+    
+    window.open(url, '_blank');
   }
 } 

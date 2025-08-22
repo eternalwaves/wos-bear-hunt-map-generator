@@ -340,6 +340,10 @@ export class MapGeneratorView extends LitElement {
     }
   }
 
+  _onFurnaceStatusUpdated(event) {
+    this.logic.onFurnaceStatusUpdated(event.detail);
+  }
+
   _onFurnacesUploaded(event) {
     this.logic.onFurnacesUploaded(event);
   }

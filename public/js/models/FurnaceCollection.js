@@ -19,6 +19,10 @@ export class FurnaceCollection {
     }
   }
 
+  addMany(furnaces) {
+    furnaces.forEach(furnace => this.add(furnace));
+  }
+
   remove(furnaceId) {
     const index = this.furnaces.findIndex(f => f.id === furnaceId);
     if (index !== -1) {

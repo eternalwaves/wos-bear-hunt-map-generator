@@ -10,7 +10,9 @@ export class FurnaceTableView extends LitElement {
     showForm: { type: Boolean },
     showGearColumns: { type: Boolean },
     hasUnsavedChanges: { type: Function },
-    markFurnaceAsSaved: { type: Function }
+    markFurnaceAsSaved: { type: Function },
+    currentMapId: { type: String },
+    currentVersion: { type: String }
   };
 
   constructor() {
@@ -21,6 +23,8 @@ export class FurnaceTableView extends LitElement {
     this.logic = new FurnaceTableViewLogic(this);
     this.hasUnsavedChanges = null;
     this.markFurnaceAsSaved = null;
+    this.currentMapId = '';
+    this.currentVersion = '';
   }
 
   static styles = css`
@@ -392,10 +396,12 @@ export class FurnaceTableView extends LitElement {
       }
 
       // Call the API to update the status
-      await furnace.updateStatus(newStatus, this.logic.getCurrentMapId(), this.logic.getCurrentVersion());
+      await furnace.updateStatus(newStatus, this.currentMapId, this.currentVersion);
       
-      // Trigger map regeneration and reload
-      await this.logic.onFurnaceStatusUpdated(furnace);
+      // Trigger map regeneration and reload by dispatching event to parent
+      this.dispatchEvent(new CustomEvent('furnace-status-updated', {
+        detail: furnace
+      }));
       
     } catch (error) {
       console.error('Failed to update furnace status:', error);
