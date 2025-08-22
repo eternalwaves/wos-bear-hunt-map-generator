@@ -492,4 +492,38 @@ export class MapGeneratorViewLogic {
       alert('Error: ' + error.message);
     }
   }
+
+  // Helper methods for accessing current map and version
+  getCurrentMapId() {
+    return this.component.currentMap?.id;
+  }
+
+  getCurrentVersion() {
+    return this.component.currentVersion;
+  }
+
+  async onFurnaceStatusUpdated(furnace) {
+    // Handle furnace status updated - regenerate SVG and reload objects
+    console.log('Furnace status updated:', furnace);
+    try {
+      // Regenerate SVG
+      const svg = await this.component.currentMap.getSVG(this.component.currentVersion);
+      this.component.svgContent = svg;
+      
+      // Reload objects to refresh the display
+      await this.loadObjects();
+      
+      // Update buttons/UI state
+      this.updateButtons();
+    } catch (error) {
+      console.error('Failed to update furnace status:', error);
+      throw error;
+    }
+  }
+
+  updateButtons() {
+    // Update button states based on current data
+    // This is a placeholder for any button state updates needed
+    console.log('Updating button states');
+  }
 } 

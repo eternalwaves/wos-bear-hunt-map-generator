@@ -370,9 +370,47 @@ export class FurnaceTableView extends LitElement {
 
   _onStatusChange(event, furnace) {
     if (furnace) {
-      furnace.status = event.target.value;
+      const newStatus = event.target.value;
+      const oldStatus = furnace.status;
+      
+      // Update local furnace object immediately for UI responsiveness
+      furnace.status = newStatus;
       this.requestUpdate();
       this._notifyFurnaceChanged();
+      
+      // Immediately call API to update status (like in original script.js)
+      this._updateFurnaceStatus(furnace, newStatus, oldStatus);
+    }
+  }
+
+  async _updateFurnaceStatus(furnace, newStatus, oldStatus) {
+    try {
+      // Show loading indicator
+      const loader = document.getElementById('loader');
+      if (loader) {
+        loader.style.display = 'block';
+      }
+
+      // Call the API to update the status
+      await furnace.updateStatus(newStatus, this.logic.getCurrentMapId(), this.logic.getCurrentVersion());
+      
+      // Trigger map regeneration and reload
+      await this.logic.onFurnaceStatusUpdated(furnace);
+      
+    } catch (error) {
+      console.error('Failed to update furnace status:', error);
+      alert('Error: ' + (error.message || 'Failed to update status'));
+      
+      // Revert the status on error
+      furnace.status = oldStatus;
+      this.requestUpdate();
+      this._notifyFurnaceChanged();
+    } finally {
+      // Hide loading indicator
+      const loader = document.getElementById('loader');
+      if (loader) {
+        loader.style.display = 'none';
+      }
     }
   }
 

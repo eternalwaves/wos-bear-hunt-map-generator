@@ -1,7 +1,8 @@
 .env
+/.vscode/
 /api/error_log
 composer.phar
-/logs
+/logs/
 /node_modules/
 /public/error_log
 /vendor/
