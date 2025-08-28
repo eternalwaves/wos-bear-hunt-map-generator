@@ -272,8 +272,8 @@ class MapGeneratorTest extends TestCase
 
     public function testOccupiedPositionHandling()
     {
-        // Add a misc object to occupy some positions
-        $miscObject = new MiscObject(12, 22, 2, "Test Object");
+        // Add a misc object to occupy some positions (moved to avoid conflict with traps)
+        $miscObject = new MiscObject(35, 45, 2, "Test Object");
         $this->map->addMiscObject($miscObject);
         
         // Add furnaces
@@ -295,14 +295,201 @@ class MapGeneratorTest extends TestCase
             // Check that furnace doesn't overlap with misc object (2x2 furnace)
             $furnaceEndX = $furnace->getX() + 1;
             $furnaceEndY = $furnace->getY() + 1;
-            $miscEndX = 12 + 1;
-            $miscEndY = 22 + 1;
+            $miscEndX = 35 + 1;
+            $miscEndY = 45 + 1;
             
             $this->assertTrue(
-                $furnace->getX() >= $miscEndX || $furnaceEndX <= 12 ||
-                $furnace->getY() >= $miscEndY || $furnaceEndY <= 22,
+                $furnace->getX() >= $miscEndX || $furnaceEndX <= 35 ||
+                $furnace->getY() >= $miscEndY || $furnaceEndY <= 45,
                 "Furnace should not overlap with misc object"
             );
         }
+    }
+
+    public function testTrapOrientationDetection(): void
+    {
+        // Create a map with horizontal trap layout (same Y coordinates)
+        $map = new Map('Test Map', 'v1', '1', 50);
+        $trap1 = new Trap(10, 15, 'trap1');
+        $trap2 = new Trap(25, 15, 'trap2'); // Same Y coordinate = horizontal layout
+        $map->addTrap($trap1);
+        $map->addTrap($trap2);
+        
+        $mapGenerator = new MapGenerator($map);
+        
+        // Use reflection to access the private method
+        $reflection = new \ReflectionClass($mapGenerator);
+        $detectOrientationMethod = $reflection->getMethod('detectTrapOrientation');
+        $detectOrientationMethod->setAccessible(true);
+        
+        $orientation = $detectOrientationMethod->invoke($mapGenerator, [$trap1, $trap2]);
+        $this->assertEquals('horizontal', $orientation);
+        
+        // Create a map with vertical trap layout (same X coordinates)
+        $map2 = new Map('Test Map 2', 'v1', '2', 50);
+        $trap3 = new Trap(15, 10, 'trap3');
+        $trap4 = new Trap(15, 25, 'trap4'); // Same X coordinate = vertical layout
+        $map2->addTrap($trap3);
+        $map2->addTrap($trap4);
+        
+        $mapGenerator2 = new MapGenerator($map2);
+        $orientation2 = $detectOrientationMethod->invoke($mapGenerator2, [$trap3, $trap4]);
+        $this->assertEquals('vertical', $orientation2);
+    }
+
+    public function testMapGenerationWithDifferentOrientations(): void
+    {
+        // Test horizontal layout
+        $mapHorizontal = new Map('Horizontal Test', 'v1', '3', 50);
+        $trap1 = new Trap(10, 15, 'trap1');
+        $trap2 = new Trap(25, 15, 'trap2'); // Same Y = horizontal
+        $mapHorizontal->addTrap($trap1);
+        $mapHorizontal->addTrap($trap2);
+        
+        $furnace1 = new Furnace('Test1', 'FC1', 100, 'R1', 50, '1');
+        $furnace2 = new Furnace('Test2', 'FC2', 90, 'R2', 45, '2');
+        $furnace3 = new Furnace('Test3', 'FC3', 80, 'R3', 40, 'both');
+        $mapHorizontal->addFurnace($furnace1);
+        $mapHorizontal->addFurnace($furnace2);
+        $mapHorizontal->addFurnace($furnace3);
+        
+        $mapGenerator = new MapGenerator($mapHorizontal);
+        $mapGenerator->generateMap();
+        
+        // Verify furnaces were placed
+        $placedFurnaces = $mapHorizontal->getFurnaces();
+        $this->assertCount(3, $placedFurnaces);
+        
+        // Test vertical layout
+        $mapVertical = new Map('Vertical Test', 'v1', '4', 50);
+        $trap3 = new Trap(15, 10, 'trap3');
+        $trap4 = new Trap(15, 25, 'trap4'); // Same X = vertical
+        $mapVertical->addTrap($trap3);
+        $mapVertical->addTrap($trap4);
+        
+        $furnace4 = new Furnace('Test4', 'FC1', 100, 'R1', 50, '1');
+        $furnace5 = new Furnace('Test5', 'FC2', 90, 'R2', 45, '2');
+        $furnace6 = new Furnace('Test6', 'FC3', 80, 'R3', 40, 'both');
+        $mapVertical->addFurnace($furnace4);
+        $mapVertical->addFurnace($furnace5);
+        $mapVertical->addFurnace($furnace6);
+        
+        $mapGenerator2 = new MapGenerator($mapVertical);
+        $mapGenerator2->generateMap();
+        
+        // Verify furnaces were placed
+        $placedFurnaces2 = $mapVertical->getFurnaces();
+        $this->assertCount(3, $placedFurnaces2);
+        
+        // Verify that furnaces have positions
+        foreach ($placedFurnaces as $furnace) {
+            $this->assertNotNull($furnace->getX());
+            $this->assertNotNull($furnace->getY());
+        }
+        
+        foreach ($placedFurnaces2 as $furnace) {
+            $this->assertNotNull($furnace->getX());
+            $this->assertNotNull($furnace->getY());
+        }
+    }
+
+    public function testVerticalLayoutZoneCalculation(): void
+    {
+        // Create a map with vertical trap layout
+        $map = new Map('Vertical Test', 'v1', '5', 50);
+        $trap1 = new Trap(15, 10, 'trap1');
+        $trap2 = new Trap(15, 25, 'trap2'); // Same X = vertical layout
+        $map->addTrap($trap1);
+        $map->addTrap($trap2);
+        
+        $mapGenerator = new MapGenerator($map);
+        
+        // Use reflection to access the private method
+        $reflection = new \ReflectionClass($mapGenerator);
+        $calculateZoneBoundsMethod = $reflection->getMethod('calculateZoneBounds');
+        $calculateZoneBoundsMethod->setAccessible(true);
+        
+        // Test zone calculation for first trap
+        $zoneBounds1 = $calculateZoneBoundsMethod->invoke($mapGenerator, $trap1, []);
+        
+        // For vertical layout, the zone should be properly positioned
+        // Trap 1 is at (15, 10), so zone should be centered around that
+        // Zone is 4x4, so it should span from X=13-17 and Y=8-12
+        $this->assertGreaterThanOrEqual(13, $zoneBounds1['startX']);
+        $this->assertLessThanOrEqual(18, $zoneBounds1['endX']);
+        $this->assertGreaterThanOrEqual(8, $zoneBounds1['startY']);
+        $this->assertLessThanOrEqual(13, $zoneBounds1['endY']);
+        
+        // Test zone calculation for second trap
+        $zoneBounds2 = $calculateZoneBoundsMethod->invoke($mapGenerator, $trap2, []);
+        
+        // Trap 2 is at (15, 25), so zone should be centered around that
+        // Zone is 4x4, so it should span from X=13-17 and Y=23-27
+        $this->assertGreaterThanOrEqual(13, $zoneBounds2['startX']);
+        $this->assertLessThanOrEqual(18, $zoneBounds2['endX']);
+        $this->assertGreaterThanOrEqual(23, $zoneBounds2['startY']);
+        $this->assertLessThanOrEqual(28, $zoneBounds2['endY']);
+        
+        // Verify zones are 4x4
+        $this->assertEquals(4, $zoneBounds1['endX'] - $zoneBounds1['startX']);
+        $this->assertEquals(4, $zoneBounds1['endY'] - $zoneBounds1['startY']);
+        $this->assertEquals(4, $zoneBounds2['endX'] - $zoneBounds2['startX']);
+        $this->assertEquals(4, $zoneBounds2['endY'] - $zoneBounds2['startY']);
+    }
+
+    public function testBannerInclusionInZoneCalculation(): void
+    {
+        // Create a map with a trap and adjacent banners
+        $map = new Map('Banner Test', 'v1', '5', 50);
+        $trap = new Trap(15, 15, 'trap1');
+        $map->addTrap($trap);
+        
+        // Add banners that are touching the trap
+        $banner1 = new MiscObject(18, 15, 1, 'banner'); // Right of trap
+        $banner2 = new MiscObject(15, 18, 1, 'banner'); // Below trap
+        $banner3 = new MiscObject(14, 15, 1, 'banner'); // Left of trap (corrected position)
+        $banner4 = new MiscObject(15, 14, 1, 'banner'); // Above trap (corrected position)
+        $map->addMiscObject($banner1);
+        $map->addMiscObject($banner2);
+        $map->addMiscObject($banner3);
+        $map->addMiscObject($banner4);
+        
+        // Add a second trap to make it a valid map
+        $trap2 = new Trap(25, 25, 'trap2');
+        $map->addTrap($trap2);
+        
+        $mapGenerator = new MapGenerator($map);
+        
+        // Use reflection to access the private method
+        $reflection = new \ReflectionClass($mapGenerator);
+        $findTouchingBannersMethod = $reflection->getMethod('findTouchingBanners');
+        $findTouchingBannersMethod->setAccessible(true);
+        
+        // Test that banners are found
+        $touchingBanners = $findTouchingBannersMethod->invoke($mapGenerator, $trap, $map->getMiscObjects());
+        $this->assertCount(4, $touchingBanners, 'Should find 4 touching banners');
+        
+        // Test zone calculation with banners
+        $calculateZoneBoundsMethod = $reflection->getMethod('calculateZoneBounds');
+        $calculateZoneBoundsMethod->setAccessible(true);
+        
+        $zoneBounds = $calculateZoneBoundsMethod->invoke($mapGenerator, $trap, $touchingBanners);
+        
+        // The zone should include the trap (15,15) and all banners
+        // Trap is 3x3, so it spans (15,15) to (17,17)
+        // Banners are at (14,15), (15,14), (18,15), (15,18)
+        // The zone is 4x4 and centered on the combined area
+        // Since the zone is constrained to 4x4, it may not include all banners at the edges
+        // But it should be positioned to include as many banners as possible
+        
+        // Verify zone is 4x4
+        $this->assertEquals(4, $zoneBounds['endX'] - $zoneBounds['startX']);
+        $this->assertEquals(4, $zoneBounds['endY'] - $zoneBounds['startY']);
+        
+        // Verify that the zone is positioned reasonably (should be centered around the trap area)
+        $this->assertGreaterThanOrEqual(13, $zoneBounds['startX'], 'Zone should start at reasonable X position');
+        $this->assertLessThanOrEqual(19, $zoneBounds['endX'], 'Zone should end at reasonable X position');
+        $this->assertGreaterThanOrEqual(13, $zoneBounds['startY'], 'Zone should start at reasonable Y position');
+        $this->assertLessThanOrEqual(19, $zoneBounds['endY'], 'Zone should end at reasonable Y position');
     }
 } 

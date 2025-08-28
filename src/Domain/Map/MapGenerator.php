@@ -161,7 +161,8 @@ class MapGenerator
         $trapSize = $trap->getSize();
         
         foreach ($miscObjects as $object) {
-            if ($object->getName() === 'Banner') {
+            // Make banner detection case-insensitive
+            if (strtolower($object->getName()) === 'banner') {
                 $objectX = $object->getX();
                 $objectY = $object->getY();
                 $objectSize = $object->getSize();
@@ -187,38 +188,28 @@ class MapGenerator
         $obj2EndX = $x2 + $size2 - 1;
         $obj2EndY = $y2 + $size2 - 1;
         
-        // Check if objects are adjacent (touching but not overlapping)
-        // Objects are touching if they are adjacent (no gap between them)
-        return (
-            // Right edge
-            ($obj1EndX === $x2 - 1 && (
-                $y2 - 1 === $obj1EndY || (
-                    $obj2EndY >= $y1 - 1 &&
-                    $obj2EndY < $obj1EndY
-                )
-            )) ||
-            // Left edge
-            ($x1 === $obj2EndX - 1 && (
-                $y2 - 1 === $obj1EndY || (
-                    $obj2EndY >= $y1 - 1 &&
-                    $obj2EndY < $obj1EndY
-                )
-            )) ||
-            // Top edge
-            ($obj1EndY === $y2 - 1 && (
-                $x2 - 1 === $obj1EndX || (
-                    $obj2EndX >= $x1 - 1 &&
-                    $obj2EndX < $obj1EndX
-                )
-            )) ||
-            // Bottom edge
-            ($y1 === $obj2EndY - 1 && (
-                $x2 - 1 === $obj1EndX || (
-                    $obj2EndX >= $x1 - 1 &&
-                    $obj2EndX < $obj1EndX
-                )
-            ))
+        // Check if objects are touching (adjacent but not overlapping)
+        // Objects are touching if they share an edge or corner
+        
+        // Check horizontal adjacency (objects are side by side)
+        $horizontalAdjacent = (
+            ($obj1EndX + 1 === $x2) || // obj1 is to the left of obj2
+            ($obj2EndX + 1 === $x1)    // obj2 is to the left of obj1
         );
+        
+        // Check vertical adjacency (objects are above/below each other)
+        $verticalAdjacent = (
+            ($obj1EndY + 1 === $y2) || // obj1 is above obj2
+            ($obj2EndY + 1 === $y1)    // obj2 is above obj1
+        );
+        
+        // Check if objects overlap horizontally and vertically
+        $horizontalOverlap = !($obj1EndX < $x2 || $obj2EndX < $x1);
+        $verticalOverlap = !($obj1EndY < $y2 || $obj2EndY < $y1);
+        
+        // Objects are touching if they are adjacent horizontally and overlap vertically,
+        // OR they are adjacent vertically and overlap horizontally
+        return ($horizontalAdjacent && $verticalOverlap) || ($verticalAdjacent && $horizontalOverlap);
     }
 
     /**
@@ -262,33 +253,60 @@ class MapGenerator
         $endX = $startX + $zoneSize;
         $endY = $startY + $zoneSize;
         
-        
         // Check if this zone would overlap with the gap zone
         if ($this->gapZone && $this->zonesOverlap(
             $startX, $startY, $endX, $endY,
             $this->gapZone['startX'], $this->gapZone['startY'], 
             $this->gapZone['endX'], $this->gapZone['endY']
         )) {
-            // Adjust the zone to avoid overlap
-            // Move the zone away from the gap zone
-            if ($centerX < $this->gapZone['startX']) {
-                // Zone is to the left of gap, move it further left
-                $startX = $this->gapZone['startX'] - $zoneSize;
-                $endX = $startX + $zoneSize;
-            } elseif ($centerX > $this->gapZone['endX']) {
-                // Zone is to the right of gap, move it further right
-                $startX = $this->gapZone['endX'];
-                $endX = $startX + $zoneSize;
-            }
+            // Detect trap orientation to adjust zone appropriately
+            $traps = $this->map->getTraps();
+            $orientation = $this->detectTrapOrientation($traps);
             
-            if ($centerY < $this->gapZone['startY']) {
-                // Zone is above gap, move it further up
-                $startY = $this->gapZone['startY'] - $zoneSize;
-                $endY = $startY + $zoneSize;
-            } elseif ($centerY > $this->gapZone['endY']) {
-                // Zone is below gap, move it further down
-                $startY = $this->gapZone['endY'];
-                $endY = $startY + $zoneSize;
+            if ($orientation === 'vertical') {
+                // For vertical layout, adjust primarily on Y-axis
+                if ($centerY < $this->gapZone['startY']) {
+                    // Zone is above gap, move it further up
+                    $startY = $this->gapZone['startY'] - $zoneSize;
+                    $endY = $startY + $zoneSize;
+                } elseif ($centerY > $this->gapZone['endY']) {
+                    // Zone is below gap, move it further down
+                    $startY = $this->gapZone['endY'];
+                    $endY = $startY + $zoneSize;
+                }
+                
+                // Also adjust X if needed, but prioritize Y adjustment
+                if ($centerX < $this->gapZone['startX']) {
+                    // Zone is to the left of gap, move it further left
+                    $startX = $this->gapZone['startX'] - $zoneSize;
+                    $endX = $startX + $zoneSize;
+                } elseif ($centerX > $this->gapZone['endX']) {
+                    // Zone is to the right of gap, move it further right
+                    $startX = $this->gapZone['endX'];
+                    $endX = $startX + $zoneSize;
+                }
+            } else {
+                // For horizontal layout, adjust primarily on X-axis
+                if ($centerX < $this->gapZone['startX']) {
+                    // Zone is to the left of gap, move it further left
+                    $startX = $this->gapZone['startX'] - $zoneSize;
+                    $endX = $startX + $zoneSize;
+                } elseif ($centerX > $this->gapZone['endX']) {
+                    // Zone is to the right of gap, move it further right
+                    $startX = $this->gapZone['endX'];
+                    $endX = $startX + $zoneSize;
+                }
+                
+                // Also adjust Y if needed, but prioritize X adjustment
+                if ($centerY < $this->gapZone['startY']) {
+                    // Zone is above gap, move it further up
+                    $startY = $this->gapZone['startY'] - $zoneSize;
+                    $endY = $startY + $zoneSize;
+                } elseif ($centerY > $this->gapZone['endY']) {
+                    // Zone is below gap, move it further down
+                    $startY = $this->gapZone['endY'];
+                    $endY = $startY + $zoneSize;
+                }
             }
         }
         
@@ -362,9 +380,45 @@ class MapGenerator
         }
     }
 
+    /**
+     * Detect if traps are laid out horizontally or vertically
+     * Returns 'horizontal' if traps have same Y-coordinate, 'vertical' if same X-coordinate
+     */
+    private function detectTrapOrientation(array $traps): string
+    {
+        if (count($traps) < 2) {
+            return 'horizontal'; // Default fallback
+        }
+        
+        $trap1 = $traps[0];
+        $trap2 = $traps[1];
+        
+        $trap1X = $trap1->getX();
+        $trap1Y = $trap1->getY();
+        $trap2X = $trap2->getX();
+        $trap2Y = $trap2->getY();
+        
+        // If Y coordinates are the same (within 1 unit), it's horizontal layout
+        if (abs($trap1Y - $trap2Y) <= 1) {
+            return 'horizontal';
+        }
+        
+        // If X coordinates are the same (within 1 unit), it's vertical layout
+        if (abs($trap1X - $trap2X) <= 1) {
+            return 'vertical';
+        }
+        
+        // If neither is clearly aligned, determine by which coordinate has smaller difference
+        $xDiff = abs($trap1X - $trap2X);
+        $yDiff = abs($trap1Y - $trap2Y);
+        
+        return ($xDiff < $yDiff) ? 'vertical' : 'horizontal';
+    }
+
     private function generateSpiralPositions(): void
     {
         $traps = $this->map->getTraps();
+        $orientation = $this->detectTrapOrientation($traps);
         
         // Generate positions for each trap (first ring as square around zone, then spiral)
         $this->spiralPositions['trap1'] = $this->generateSquarePositionsForTrap($traps[0]->getX(), $traps[0]->getY(), 1, 0);
@@ -375,39 +429,74 @@ class MapGenerator
         $trap2FirstRing = $this->getFirstRingPositionsForTrap(1);
         $excludedPositions = array_merge($trap1FirstRing, $trap2FirstRing);
         
-        // Generate center spiral positions
-        $leftX = min($traps[0]->getX(), $traps[1]->getX()) + 3;
-        $rightX = max($traps[0]->getX(), $traps[1]->getX());
-        $midX = round(($leftX + $rightX) / 2) - 1;
-        
-        // Calculate centerY that aligns with one of the first ring Y-values of the traps
-        // First, get the zone centers for both traps
-        $trap1ZoneCenterY = round(($this->trapZoneBounds[0]['startY'] + $this->trapZoneBounds[0]['endY']) / 2);
-        $trap2ZoneCenterY = round(($this->trapZoneBounds[1]['startY'] + $this->trapZoneBounds[1]['endY']) / 2);
-        
-        // Get the first ring Y-values for both traps (Y-4, Y-2, Y, Y+2)
-        $trap1FirstRingY = [$trap1ZoneCenterY - 4, $trap1ZoneCenterY - 2, $trap1ZoneCenterY, $trap1ZoneCenterY + 2];
-        $trap2FirstRingY = [$trap2ZoneCenterY - 4, $trap2ZoneCenterY - 2, $trap2ZoneCenterY, $trap2ZoneCenterY + 2];
-        
-        // Find a Y-value that appears in both first rings or is close to both
-        $allFirstRingY = array_merge($trap1FirstRingY, $trap2FirstRingY);
-        $bottomY = min($traps[0]->getY(), $traps[1]->getY());
-        $topY = max($traps[0]->getY(), $traps[1]->getY()) + 3;
-        $originalMidY = round(($bottomY + $topY) / 2) - 1; // Original calculation as fallback
-        
-        // Try to find a Y-value that's close to the midpoint and aligns with first ring patterns
-        $bestY = $originalMidY;
-        $minDistance = PHP_INT_MAX;
-        
-        foreach ($allFirstRingY as $y) {
-            $distance = abs($y - $originalMidY);
-            if ($distance < $minDistance) {
-                $minDistance = $distance;
-                $bestY = $y;
+        // Generate center spiral positions based on orientation
+        if ($orientation === 'horizontal') {
+            // Horizontal layout: traps are side by side, center is between them
+            $leftX = min($traps[0]->getX(), $traps[1]->getX()) + 3;
+            $rightX = max($traps[0]->getX(), $traps[1]->getX());
+            $midX = round(($leftX + $rightX) / 2) - 1;
+            
+            // Calculate centerY that aligns with one of the first ring Y-values of the traps
+            $trap1ZoneCenterY = round(($this->trapZoneBounds[0]['startY'] + $this->trapZoneBounds[0]['endY']) / 2);
+            $trap2ZoneCenterY = round(($this->trapZoneBounds[1]['startY'] + $this->trapZoneBounds[1]['endY']) / 2);
+            
+            // Get the first ring Y-values for both traps (Y-4, Y-2, Y, Y+2)
+            $trap1FirstRingY = [$trap1ZoneCenterY - 4, $trap1ZoneCenterY - 2, $trap1ZoneCenterY, $trap1ZoneCenterY + 2];
+            $trap2FirstRingY = [$trap2ZoneCenterY - 4, $trap2ZoneCenterY - 2, $trap2ZoneCenterY, $trap2ZoneCenterY + 2];
+            
+            // Find a Y-value that appears in both first rings or is close to both
+            $allFirstRingY = array_merge($trap1FirstRingY, $trap2FirstRingY);
+            $bottomY = min($traps[0]->getY(), $traps[1]->getY());
+            $topY = max($traps[0]->getY(), $traps[1]->getY()) + 3;
+            $originalMidY = round(($bottomY + $topY) / 2) - 1; // Original calculation as fallback
+            
+            // Try to find a Y-value that's close to the midpoint and aligns with first ring patterns
+            $bestY = $originalMidY;
+            $minDistance = PHP_INT_MAX;
+            
+            foreach ($allFirstRingY as $y) {
+                $distance = abs($y - $originalMidY);
+                if ($distance < $minDistance) {
+                    $minDistance = $distance;
+                    $bestY = $y;
+                }
             }
+            
+            $midY = $bestY;
+        } else {
+            // Vertical layout: traps are stacked, center is between them vertically
+            $bottomY = min($traps[0]->getY(), $traps[1]->getY()) + 3;
+            $topY = max($traps[0]->getY(), $traps[1]->getY());
+            $midY = round(($bottomY + $topY) / 2) - 1;
+            
+            // Calculate centerX that aligns with one of the first ring X-values of the traps
+            $trap1ZoneCenterX = round(($this->trapZoneBounds[0]['startX'] + $this->trapZoneBounds[0]['endX']) / 2);
+            $trap2ZoneCenterX = round(($this->trapZoneBounds[1]['startX'] + $this->trapZoneBounds[1]['endX']) / 2);
+            
+            // Get the first ring X-values for both traps (X-4, X-2, X, X+2)
+            $trap1FirstRingX = [$trap1ZoneCenterX - 4, $trap1ZoneCenterX - 2, $trap1ZoneCenterX, $trap1ZoneCenterX + 2];
+            $trap2FirstRingX = [$trap2ZoneCenterX - 4, $trap2ZoneCenterX - 2, $trap2ZoneCenterX, $trap2ZoneCenterX + 2];
+            
+            // Find an X-value that appears in both first rings or is close to both
+            $allFirstRingX = array_merge($trap1FirstRingX, $trap2FirstRingX);
+            $leftX = min($traps[0]->getX(), $traps[1]->getX());
+            $rightX = max($traps[0]->getX(), $traps[1]->getX()) + 3;
+            $originalMidX = round(($leftX + $rightX) / 2) - 1; // Original calculation as fallback
+            
+            // Try to find an X-value that's close to the midpoint and aligns with first ring patterns
+            $bestX = $originalMidX;
+            $minDistance = PHP_INT_MAX;
+            
+            foreach ($allFirstRingX as $x) {
+                $distance = abs($x - $originalMidX);
+                if ($distance < $minDistance) {
+                    $minDistance = $distance;
+                    $bestX = $x;
+                }
+            }
+            
+            $midX = $bestX;
         }
-        
-        $midY = $bestY;
         
         $this->spiralPositions['center'] = $this->generateSquarePositionsForTrap($midX, $midY, '', -1, $excludedPositions);
     }
@@ -546,12 +635,28 @@ class MapGenerator
         
         $distanceToGap = sqrt(pow($centerX - $gapCenterX, 2) + pow($centerY - $gapCenterY, 2));
         
-        // For trap 1 (left), prioritize right side
-        // For trap 2 (right), prioritize left side
-        if ($trapIndex === 0) {
-            return 'right';
+        // Detect trap orientation to determine which sides to prioritize
+        $traps = $this->map->getTraps();
+        $orientation = $this->detectTrapOrientation($traps);
+        
+        if ($orientation === 'horizontal') {
+            // Horizontal layout: prioritize left/right sides
+            // For trap 1 (left), prioritize right side
+            // For trap 2 (right), prioritize left side
+            if ($trapIndex === 0) {
+                return 'right';
+            } else {
+                return 'left';
+            }
         } else {
-            return 'left';
+            // Vertical layout: prioritize top/bottom sides
+            // For trap 1 (top), prioritize bottom side
+            // For trap 2 (bottom), prioritize top side
+            if ($trapIndex === 0) {
+                return 'bottom';
+            } else {
+                return 'top';
+            }
         }
     }
 
@@ -608,6 +713,51 @@ class MapGenerator
                 [$xCoords[3], $yCoords[1]], // middle-right (X+2, Y-2)
                 [$xCoords[3], $yCoords[2]], // middle-right (X+2, Y)
             ];
+        } elseif ($prioritizeSide === 'bottom') {
+            // Prioritize bottom side first, then left/right, then top
+            $order = [
+                // Bottom side (furthest from gap) - Y+2 positions
+                [$xCoords[0], $yCoords[3]], // bottom-left (X-4, Y+2)
+                [$xCoords[1], $yCoords[3]], // bottom-left (X-2, Y+2)
+                [$xCoords[2], $yCoords[3]], // bottom-middle (X, Y+2)
+                [$xCoords[3], $yCoords[3]], // bottom-right (X+2, Y+2)
+                // Left and right edges
+                [$xCoords[0], $yCoords[0]], // top-left (X-4, Y-4)
+                [$xCoords[0], $yCoords[1]], // top-left (X-4, Y-2)
+                [$xCoords[0], $yCoords[2]], // middle-left (X-4, Y)
+                [$xCoords[3], $yCoords[0]], // top-right (X+2, Y-4)
+                [$xCoords[3], $yCoords[1]], // top-right (X+2, Y-2)
+                [$xCoords[3], $yCoords[2]], // middle-right (X+2, Y)
+                // Top side (closest to gap) - Y-4 and Y-2 positions
+                [$xCoords[1], $yCoords[0]], // top-left (X-2, Y-4)
+                [$xCoords[2], $yCoords[0]], // top-middle (X, Y-4)
+                [$xCoords[1], $yCoords[1]], // top-left (X-2, Y-2)
+                [$xCoords[2], $yCoords[1]], // top-middle (X, Y-2)
+            ];
+        } elseif ($prioritizeSide === 'top') {
+            // Prioritize top side first, then left/right, then bottom
+            $order = [
+                // Top side (furthest from gap) - Y-4 positions
+                [$xCoords[0], $yCoords[0]], // top-left (X-4, Y-4)
+                [$xCoords[1], $yCoords[0]], // top-left (X-2, Y-4)
+                [$xCoords[2], $yCoords[0]], // top-middle (X, Y-4)
+                [$xCoords[3], $yCoords[0]], // top-right (X+2, Y-4)
+                // Top side - Y-2 positions
+                [$xCoords[0], $yCoords[1]], // top-left (X-4, Y-2)
+                [$xCoords[1], $yCoords[1]], // top-left (X-2, Y-2)
+                [$xCoords[2], $yCoords[1]], // top-middle (X, Y-2)
+                [$xCoords[3], $yCoords[1]], // top-right (X+2, Y-2)
+                // Left and right edges
+                [$xCoords[0], $yCoords[2]], // middle-left (X-4, Y)
+                [$xCoords[3], $yCoords[2]], // middle-right (X+2, Y)
+                [$xCoords[0], $yCoords[3]], // bottom-left (X-4, Y+2)
+                [$xCoords[3], $yCoords[3]], // bottom-right (X+2, Y+2)
+                // Bottom side (closest to gap) - Y+2 positions
+                [$xCoords[1], $yCoords[2]], // middle-left (X-2, Y)
+                [$xCoords[2], $yCoords[2]], // middle (X, Y)
+                [$xCoords[1], $yCoords[3]], // bottom-left (X-2, Y+2)
+                [$xCoords[2], $yCoords[3]], // bottom-middle (X, Y+2)
+            ];
         } else {
             // No specific priority, use standard order (clockwise from top-left)
             $order = [
@@ -635,7 +785,12 @@ class MapGenerator
             ];
         }
         
-        return $order;
+        // Add positions in the defined order
+        foreach ($order as $pos) {
+            $positions[] = $pos;
+        }
+        
+        return $positions;
     }
 
     private function sortPositions(array &$positions, int $centerX, int $centerY, $group): void
