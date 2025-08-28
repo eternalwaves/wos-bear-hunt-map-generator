@@ -145,9 +145,116 @@
             background: #5a6268;
         }
         
+        .btn-edit {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background: #138496;
+        }
+        
         .btn:disabled {
             background: #ccc;
             cursor: not-allowed;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+        
+        .btn-save {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background: #218838;
         }
         
         .stats-grid {
@@ -242,6 +349,60 @@
         </table>
     </div>
 
+    <!-- Edit Username Modal -->
+    <div id="editUsernameModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Username</h2>
+                <span class="close" onclick="closeModal('editUsernameModal')">&times;</span>
+            </div>
+            <form id="editUsernameForm">
+                <input type="hidden" id="editUsernameUserId">
+                <div class="form-group">
+                    <label for="newUsername">New Username:</label>
+                    <input type="text" id="newUsername" name="newUsername" required minlength="3" pattern="[a-zA-Z0-9_-]+">
+                </div>
+                <div class="form-group">
+                    <label for="currentPasswordForUsername">Current Password:</label>
+                    <input type="password" id="currentPasswordForUsername" name="currentPassword" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal('editUsernameModal')">Cancel</button>
+                    <button type="submit" class="btn btn-save">Save Username</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Password Modal -->
+    <div id="editPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Password</h2>
+                <span class="close" onclick="closeModal('editPasswordModal')">&times;</span>
+            </div>
+            <form id="editPasswordForm">
+                <input type="hidden" id="editPasswordUserId">
+                <div class="form-group">
+                    <label for="currentPasswordForPassword">Current Password:</label>
+                    <input type="password" id="currentPasswordForPassword" name="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password:</label>
+                    <input type="password" id="newPassword" name="newPassword" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password:</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required minlength="8">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal('editPasswordModal')">Cancel</button>
+                    <button type="submit" class="btn btn-save">Save Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="js/session-manager.js"></script>
     <script>
         // Check if user is logged in and is master user
@@ -273,37 +434,11 @@
             }, 5000);
         }
 
-        async function makeApiCall(action, data = {}) {
-            try {
-                const formData = new FormData();
-                formData.append('action', action);
-                
-                for (const [key, value] of Object.entries(data)) {
-                    formData.append(key, value);
-                }
-                
-                const response = await window.sessionManager.makeAuthenticatedRequest('auth.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(result.message || 'An error occurred');
-                }
-                
-                return result;
-            } catch (error) {
-                throw new Error(error.message || 'Network error');
-            }
-        }
-
         async function loadUsers() {
             try {
-                const result = await makeApiCall('get_all_users');
-                displayUsers(result.data);
-                updateStats(result.data);
+                const result = await window.sessionManager.getAllUsers();
+                displayUsers(result);
+                updateStats(result);
             } catch (error) {
                 showMessage(error.message, 'error');
             }
@@ -332,6 +467,8 @@
                     <td>${new Date(user.created_at).toLocaleDateString()}</td>
                     <td>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
                     <td class="action-buttons">
+                        <button class="btn btn-edit" onclick="editUsername(${user.id}, '${user.username}')">Edit Username</button>
+                        <button class="btn btn-edit" onclick="editPassword(${user.id})">Edit Password</button>
                         ${!user.is_master && !user.is_approved ? 
                             `<button class="btn btn-approve" onclick="approveUser(${user.id})">Approve</button>` : ''}
                         ${!user.is_master && user.is_active ? 
@@ -361,7 +498,7 @@
             }
 
             try {
-                await makeApiCall('approve_user', { user_id: userId });
+                await window.sessionManager.approveUser(userId);
                 showMessage('User approved successfully', 'success');
                 loadUsers();
             } catch (error) {
@@ -375,7 +512,7 @@
             }
 
             try {
-                await makeApiCall('deactivate_user', { user_id: userId });
+                await window.sessionManager.deactivateUser(userId);
                 showMessage('User deactivated successfully', 'success');
                 loadUsers();
             } catch (error) {
@@ -389,7 +526,7 @@
             }
 
             try {
-                await makeApiCall('delete_user', { user_id: userId });
+                await window.sessionManager.deleteUser(userId);
                 showMessage('User deleted successfully', 'success');
                 loadUsers();
             } catch (error) {
@@ -403,6 +540,90 @@
             }
             window.location.href = 'login.html';
         }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            // Clear form fields
+            const form = document.querySelector(`#${modalId} form`);
+            if (form) {
+                form.reset();
+            }
+        }
+
+        function editUsername(userId, currentUsername) {
+            document.getElementById('editUsernameUserId').value = userId;
+            document.getElementById('newUsername').value = currentUsername;
+            openModal('editUsernameModal');
+        }
+
+        function editPassword(userId) {
+            document.getElementById('editPasswordUserId').value = userId;
+            openModal('editPasswordModal');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    closeModal(modal.id);
+                }
+            });
+        }
+
+        // Form submission handlers
+        document.getElementById('editUsernameForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('editUsernameUserId').value;
+            const newUsername = document.getElementById('newUsername').value;
+            const currentPassword = document.getElementById('currentPasswordForUsername').value;
+
+            try {
+                await window.sessionManager.updateUsername(userId, newUsername, currentPassword);
+                
+                showMessage('Username updated successfully', 'success');
+                closeModal('editUsernameModal');
+                
+                // Refresh session if the current user updated their own username
+                const currentUser = window.sessionManager.getUserInfo();
+                if (currentUser && currentUser.id == userId) {
+                    await window.sessionManager.refreshSession();
+                }
+                
+                loadUsers(); // Refresh the user list
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        });
+
+        document.getElementById('editPasswordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('editPasswordUserId').value;
+            const currentPassword = document.getElementById('currentPasswordForPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showMessage('New passwords do not match', 'error');
+                return;
+            }
+
+            try {
+                await window.sessionManager.updatePassword(userId, currentPassword, newPassword);
+                
+                showMessage('Password updated successfully', 'success');
+                closeModal('editPasswordModal');
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        });
     </script>
 </body>
 </html> 

@@ -293,6 +293,173 @@ class SecureSessionManager {
     }
 
     /**
+     * Get all users (for admin users)
+     */
+    async getAllUsers() {
+        try {
+            const response = await fetch('auth.php?action=get_all_users', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || result.status !== 'success') {
+                throw new Error(result.message || 'Failed to get users');
+            }
+
+            return result.data;
+        } catch (error) {
+            console.error('Failed to get users:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Approve user (for admin users)
+     */
+    async approveUser(userId) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'approve_user');
+            formData.append('user_id', userId);
+
+            const response = await fetch('auth.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || result.status !== 'success') {
+                throw new Error(result.message || 'Failed to approve user');
+            }
+
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to approve user:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Deactivate user (for admin users)
+     */
+    async deactivateUser(userId) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'deactivate_user');
+            formData.append('user_id', userId);
+
+            const response = await fetch('auth.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || result.status !== 'success') {
+                throw new Error(result.message || 'Failed to deactivate user');
+            }
+
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to deactivate user:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Delete user (for admin users)
+     */
+    async deleteUser(userId) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'delete_user');
+            formData.append('user_id', userId);
+
+            const response = await fetch('auth.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || result.status !== 'success') {
+                throw new Error(result.message || 'Failed to delete user');
+            }
+
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to delete user:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update username (for all users)
+     */
+    async updateUsername(userId, newUsername, currentPassword) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'update_username');
+            formData.append('user_id', userId);
+            formData.append('new_username', newUsername);
+            formData.append('current_password', currentPassword);
+
+            const response = await fetch('auth.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || result.status !== 'success') {
+                throw new Error(result.message || 'Failed to update username');
+            }
+
+            return { success: true, message: result.message };
+        } catch (error) {
+            console.error('Failed to update username:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update password (for all users)
+     */
+    async updatePassword(userId, currentPassword, newPassword) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'update_password');
+            formData.append('user_id', userId);
+            formData.append('current_password', currentPassword);
+            formData.append('new_password', newPassword);
+
+            const response = await fetch('auth.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || result.status !== 'success') {
+                throw new Error(result.message || 'Failed to update password');
+            }
+
+            return { success: true, message: result.message };
+        } catch (error) {
+            console.error('Failed to update password:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Check if user has admin privileges
      */
     isAdmin() {
@@ -322,6 +489,33 @@ class SecureSessionManager {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Refresh session data from server
+     */
+    async refreshSession() {
+        try {
+            const response = await fetch('auth.php?action=check_session', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.status === 'success' && data.data.authenticated) {
+                    this.userInfo = data.data.user;
+                    return true;
+                }
+            }
+            return false;
+        } catch (error) {
+            console.error('Session refresh failed:', error);
+            return false;
+        }
     }
 }
 

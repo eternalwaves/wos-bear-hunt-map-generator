@@ -60,6 +60,12 @@ class AuthenticationController
                 case 'logout':
                     $this->handleLogout();
                     break;
+                case 'update_username':
+                    $this->handleUpdateUsername();
+                    break;
+                case 'update_password':
+                    $this->handleUpdatePassword();
+                    break;
                 default:
                     http_response_code(400);
                     echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
@@ -280,7 +286,7 @@ class AuthenticationController
                 'is_active' => $user->isActive(),
                 'email_verified' => $user->isEmailVerified(),
                 'created_at' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
-                'last_login' => $user->getLastLogin()?->format('Y-m-d H:i:s')
+                'last_login' => $user->getLastLogin() ? $user->getLastLogin()->format('Y-m-d H:i:s') : null
             ];
         }, $users);
 
@@ -352,6 +358,42 @@ class AuthenticationController
                 'authenticated' => false,
                 'user' => null
             ]
+        ]);
+    }
+
+    private function handleUpdateUsername(): void
+    {
+        $userId = (int)($_POST['user_id'] ?? 0);
+        $newUsername = $_POST['new_username'] ?? '';
+        $currentPassword = $_POST['current_password'] ?? '';
+
+        if (empty($userId) || empty($newUsername) || empty($currentPassword)) {
+            throw new ValidationException('User ID, new username, and current password are required');
+        }
+
+        $this->authService->updateUsername($userId, $newUsername, $currentPassword);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Username updated successfully'
+        ]);
+    }
+
+    private function handleUpdatePassword(): void
+    {
+        $userId = (int)($_POST['user_id'] ?? 0);
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+
+        if (empty($userId) || empty($currentPassword) || empty($newPassword)) {
+            throw new ValidationException('User ID, current password, and new password are required');
+        }
+
+        $this->authService->updatePassword($userId, $currentPassword, $newPassword);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Password updated successfully'
         ]);
     }
 } 

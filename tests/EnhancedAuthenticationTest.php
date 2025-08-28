@@ -99,6 +99,304 @@ class EnhancedAuthenticationTest extends TestCase
         $this->assertEquals($otp1, $otp2);
     }
 
+    public function testUpdateUsernameSuccess()
+    {
+        $user = new User(
+            'oldusername',
+            'test@example.com',
+            password_hash('SecurePass123!', PASSWORD_ARGON2ID),
+            false, // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($user);
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findByUsername')
+            ->with('newusername')
+            ->willReturn(null); // No existing user with this username
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('save')
+            ->with($this->callback(function($user) {
+                return $user->getUsername() === 'newusername';
+            }));
+
+        $result = $this->authService->updateUsername(1, 'newusername', 'SecurePass123!');
+        $this->assertTrue($result);
+    }
+
+    public function testUpdateUsernameWithInvalidCurrentPassword()
+    {
+        $user = new User(
+            'oldusername',
+            'test@example.com',
+            password_hash('SecurePass123!', PASSWORD_ARGON2ID),
+            false, // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($user);
+
+        $this->expectException(AuthenticationException::class);
+        $this->expectExceptionMessage('Current password is incorrect');
+
+        $this->authService->updateUsername(1, 'newusername', 'WrongPassword123!');
+    }
+
+    public function testUpdateUsernameWithExistingUsername()
+    {
+        $user = new User(
+            'oldusername',
+            'test@example.com',
+            password_hash('SecurePass123!', PASSWORD_ARGON2ID),
+            false, // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $existingUser = new User(
+            'newusername',
+            'other@example.com',
+            password_hash('OtherPass123!', PASSWORD_ARGON2ID),
+            false, // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+        $existingUser->setId(2); // Different user ID
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($user);
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findByUsername')
+            ->with('newusername')
+            ->willReturn($existingUser);
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Username already exists');
+
+        $this->authService->updateUsername(1, 'newusername', 'SecurePass123!');
+    }
+
+    public function testUpdateUsernameWithInvalidUsername()
+    {
+        $user = new User(
+            'oldusername',
+            'test@example.com',
+            password_hash('SecurePass123!', PASSWORD_ARGON2ID),
+            false, // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($user);
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Username must be at least 3 characters long');
+
+        $this->authService->updateUsername(1, 'ab', 'SecurePass123!');
+    }
+
+    public function testUpdateUsernameWithSpecialCharacters()
+    {
+        $user = new User(
+            'oldusername',
+            'test@example.com',
+            password_hash('SecurePass123!', PASSWORD_ARGON2ID),
+            false, // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($user);
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Username can only contain letters, numbers, underscores, and hyphens');
+
+        $this->authService->updateUsername(1, 'user@name', 'SecurePass123!');
+    }
+
+    public function testUpdatePasswordSuccess()
+    {
+        $user = new User(
+            'testuser',
+            'test@example.com',
+            password_hash('OldPass123!', PASSWORD_ARGON2ID),
+            false, // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($user);
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('save')
+            ->with($this->callback(function($user) {
+                return password_verify('NewPass123!', $user->getPasswordHash());
+            }));
+
+        $result = $this->authService->updatePassword(1, 'OldPass123!', 'NewPass123!');
+        $this->assertTrue($result);
+    }
+
+    public function testUpdatePasswordWithInvalidCurrentPassword()
+    {
+        $user = new User(
+            'testuser',
+            'test@example.com',
+            password_hash('OldPass123!', PASSWORD_ARGON2ID),
+            false, // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($user);
+
+        $this->expectException(AuthenticationException::class);
+        $this->expectExceptionMessage('Current password is incorrect');
+
+        $this->authService->updatePassword(1, 'WrongPass123!', 'NewPass123!');
+    }
+
+    public function testUpdatePasswordWithInvalidNewPassword()
+    {
+        $user = new User(
+            'testuser',
+            'test@example.com',
+            password_hash('OldPass123!', PASSWORD_ARGON2ID),
+            false, // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($user);
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Password must be at least 8 characters long');
+
+        $this->authService->updatePassword(1, 'OldPass123!', 'short');
+    }
+
+    public function testUpdateUsernameForMasterUser()
+    {
+        $masterUser = new User(
+            'oldadmin',
+            'admin@example.com',
+            password_hash('AdminPass123!', PASSWORD_ARGON2ID),
+            true,  // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($masterUser);
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findByUsername')
+            ->with('newadmin')
+            ->willReturn(null);
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('save')
+            ->with($this->callback(function($user) {
+                return $user->getUsername() === 'newadmin' && $user->isMaster();
+            }));
+
+        $result = $this->authService->updateUsername(1, 'newadmin', 'AdminPass123!');
+        $this->assertTrue($result);
+    }
+
+    public function testUpdatePasswordForMasterUser()
+    {
+        $masterUser = new User(
+            'admin',
+            'admin@example.com',
+            password_hash('OldAdminPass123!', PASSWORD_ARGON2ID),
+            true,  // isMaster
+            true,  // isApproved
+            true,  // isActive
+            true   // emailVerified
+        );
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($masterUser);
+
+        $this->mockUserRepository->expects($this->once())
+            ->method('save')
+            ->with($this->callback(function($user) {
+                return password_verify('NewAdminPass123!', $user->getPasswordHash()) && $user->isMaster();
+            }));
+
+        $result = $this->authService->updatePassword(1, 'OldAdminPass123!', 'NewAdminPass123!');
+        $this->assertTrue($result);
+    }
+
+    public function testUpdateUsernameUserNotFound()
+    {
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(999)
+            ->willReturn(null);
+
+        $this->expectException(AuthenticationException::class);
+        $this->expectExceptionMessage('User not found');
+
+        $this->authService->updateUsername(999, 'newusername', 'SecurePass123!');
+    }
+
+    public function testUpdatePasswordUserNotFound()
+    {
+        $this->mockUserRepository->expects($this->once())
+            ->method('findById')
+            ->with(999)
+            ->willReturn(null);
+
+        $this->expectException(AuthenticationException::class);
+        $this->expectExceptionMessage('User not found');
+
+        $this->authService->updatePassword(999, 'OldPass123!', 'NewPass123!');
+    }
+
     public function testRateLimiting()
     {
         $username = 'testuser';
@@ -201,7 +499,9 @@ class EnhancedAuthenticationTest extends TestCase
         $this->assertStringContainsString('TEST_STATUS', $logContent);
     }
 
-    // Helper method to invoke private methods for testing
+    /**
+     * Helper method to invoke private methods for testing
+     */
     private function invokeMethod($object, $methodName, array $parameters = [])
     {
         $reflection = new \ReflectionClass(get_class($object));

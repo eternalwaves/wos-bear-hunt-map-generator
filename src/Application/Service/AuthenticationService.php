@@ -297,6 +297,69 @@ class AuthenticationService
         return $this->userRepository->findById($userId);
     }
 
+    public function updateUsername(int $userId, string $newUsername, string $currentPassword): bool
+    {
+        $user = $this->userRepository->findById($userId);
+        if (!$user) {
+            throw new AuthenticationException('User not found');
+        }
+
+        // Verify current password
+        if (!password_verify($currentPassword, $user->getPasswordHash())) {
+            throw new AuthenticationException('Current password is incorrect');
+        }
+
+        // Validate new username
+        if (empty($newUsername) || strlen($newUsername) < 3) {
+            throw new ValidationException('Username must be at least 3 characters long');
+        }
+
+        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $newUsername)) {
+            throw new ValidationException('Username can only contain letters, numbers, underscores, and hyphens');
+        }
+
+        // Check if username already exists (excluding current user)
+        $existingUser = $this->userRepository->findByUsername($newUsername);
+        if ($existingUser && $existingUser->getId() !== $userId) {
+            throw new ValidationException('Username already exists');
+        }
+
+        // Update username
+        $user->setUsername($newUsername);
+        $this->userRepository->save($user);
+
+        return true;
+    }
+
+    public function updatePassword(int $userId, string $currentPassword, string $newPassword): bool
+    {
+        $user = $this->userRepository->findById($userId);
+        if (!$user) {
+            throw new AuthenticationException('User not found');
+        }
+
+        // Verify current password
+        if (!password_verify($currentPassword, $user->getPasswordHash())) {
+            throw new AuthenticationException('Current password is incorrect');
+        }
+
+        // Validate new password
+        $this->validatePassword($newPassword);
+
+        // Hash new password
+        $passwordHash = password_hash($newPassword, PASSWORD_ARGON2ID, [
+            'memory_cost' => 65536,
+            'time_cost' => 4,
+            'threads' => 3
+        ]);
+        
+        // Update password
+        $user->setPasswordHash($passwordHash);
+        $this->userRepository->save($user);
+
+        return true;
+    }
+
     public function createSession(User $user): array
     {
         // Start session if not already started
