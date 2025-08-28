@@ -490,10 +490,12 @@ function applyWeightedCriteriaToUI(weightedCriteria) {
     }
     
     // Switch to weighted mode
-    const weightedRadio = document.getElementById('weightedPriorityMode');
+    const weightedRadio = document.querySelector('input[name="priorityMode"][value="weighted"]');
     if (weightedRadio) {
         weightedRadio.checked = true;
-        togglePriorityMode.call(weightedRadio);
+        // Trigger the change event to properly update the UI
+        const changeEvent = new Event('change', { bubbles: true });
+        weightedRadio.dispatchEvent(changeEvent);
         console.log('Switched to weighted mode');
     } else {
         console.log('Weighted radio button not found');
