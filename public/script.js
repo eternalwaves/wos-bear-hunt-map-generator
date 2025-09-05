@@ -109,6 +109,9 @@ function setupEventListeners() {
         let formData = new FormData();
         formData.append("csv_file", fileInput);
         formData.append("map_id", currentMapId);
+        if (currentVersion) {
+            formData.append("version", currentVersion);
+        }
 
         fetch("api.php?action=upload_excel", {
             method: "POST",

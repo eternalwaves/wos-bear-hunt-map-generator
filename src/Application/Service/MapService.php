@@ -481,9 +481,13 @@ class MapService
         ];
     }
 
-    public function importExcel(string $mapId, string $filePath, string $fileName): void
+    public function importExcel(string $mapId, string $filePath, string $fileName, string $version = null): void
     {
-        $map = $this->getMap($mapId);
+        if ($version) {
+            $map = $this->getVersion($mapId, $version);
+        } else {
+            $map = $this->getMap($mapId);
+        }
         
         if (!file_exists($filePath)) {
             throw new ValidationException("Excel file not found");

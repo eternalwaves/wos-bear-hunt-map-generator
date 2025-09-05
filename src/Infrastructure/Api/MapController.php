@@ -614,6 +614,7 @@ class MapController
     private function uploadExcel(): array
     {
         $mapId = $_POST['map_id'] ?? '';
+        $version = $_POST['version'] ?? null;
         $file = $_FILES['csv_file'] ?? null;
 
         if (empty($mapId) || !$file || $file['error'] !== UPLOAD_ERR_OK) {
@@ -624,7 +625,7 @@ class MapController
         $fileName = $file['name'];
 
         try {
-            $this->mapService->importExcel($mapId, $filePath, $fileName);
+            $this->mapService->importExcel($mapId, $filePath, $fileName, $version);
             return ['status' => 'success', 'message' => 'Excel file uploaded and processed successfully'];
         } catch (ValidationException $e) {
             return ['status' => 'error', 'message' => $e->getMessage()];
