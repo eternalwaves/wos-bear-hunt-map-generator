@@ -4,6 +4,7 @@ namespace App\Domain\Map;
 
 use App\Domain\MapObject\Furnace;
 use App\Domain\MapObject\Trap;
+use App\Domain\MapObject\MiscObject;
 use App\Application\Exception\ValidationException;
 use App\Application\Service\WeightedCriteriaService;
 
@@ -118,6 +119,7 @@ class MapGenerator
     /**
      * Create 4x4 no-occupy zones around each trap
      * This ensures furnaces are placed properly around traps without gaps
+     * Banners are allowed to be placed adjacent to traps, which will adjust the zones
      */
     private function createTrapNoOccupyZones(): void
     {
@@ -141,7 +143,7 @@ class MapGenerator
             // Store the zone bounds for this trap (index 0 for trap1, 1 for trap2)
             $this->trapZoneBounds[$index] = $zoneBounds;
             
-            // Mark the entire zone as occupied
+            // Mark the entire zone as occupied, but allow banners to be placed adjacent
             for ($x = $zoneBounds['startX']; $x < $zoneBounds['endX']; $x++) {
                 for ($y = $zoneBounds['startY']; $y < $zoneBounds['endY']; $y++) {
                     $this->occupiedPositions["$x,$y"] = 'trap_zone';
@@ -188,28 +190,36 @@ class MapGenerator
         $obj2EndX = $x2 + $size2 - 1;
         $obj2EndY = $y2 + $size2 - 1;
         
-        // Check if objects are touching (adjacent but not overlapping)
-        // Objects are touching if they share an edge or corner
+        // Check right edge condition
+        $rightEdge = $obj1EndX === $x2 - 1;
+        $rightEdgeY = $y2 - 1 === $obj1EndY || ($obj2EndY >= $y1 - 1 && $obj2EndY <= $obj1EndY);
         
-        // Check horizontal adjacency (objects are side by side)
-        $horizontalAdjacent = (
-            ($obj1EndX + 1 === $x2) || // obj1 is to the left of obj2
-            ($obj2EndX + 1 === $x1)    // obj2 is to the left of obj1
+        // Check left edge condition
+        $leftEdge = $obj2EndX === $x1 - 1;
+        $leftEdgeY = $y2 - 1 === $obj1EndY || ($obj2EndY >= $y1 - 1 && $obj2EndY <= $obj1EndY);
+        
+        // Check top edge condition
+        $topEdge = $obj1EndY === $y2 - 1;
+        $topEdgeX = $x2 - 1 === $obj1EndX || ($obj2EndX >= $x1 - 1 && $obj2EndX <= $obj1EndX);
+        
+        // Check bottom edge condition
+        $bottomEdge = $obj2EndY === $y1 - 1;
+        $bottomEdgeX = $x2 - 1 === $obj1EndX || ($obj2EndX >= $x1 - 1 && $obj2EndX <= $obj1EndX);
+        
+        // Check if objects are adjacent (touching but not overlapping)
+        // Objects are touching if they are adjacent (no gap between them)
+        $result = (
+            // Right edge
+            ($rightEdge && $rightEdgeY) ||
+            // Left edge
+            ($leftEdge && $leftEdgeY) ||
+            // Top edge
+            ($topEdge && $topEdgeX) ||
+            // Bottom edge
+            ($bottomEdge && $bottomEdgeX)
         );
         
-        // Check vertical adjacency (objects are above/below each other)
-        $verticalAdjacent = (
-            ($obj1EndY + 1 === $y2) || // obj1 is above obj2
-            ($obj2EndY + 1 === $y1)    // obj2 is above obj1
-        );
-        
-        // Check if objects overlap horizontally and vertically
-        $horizontalOverlap = !($obj1EndX < $x2 || $obj2EndX < $x1);
-        $verticalOverlap = !($obj1EndY < $y2 || $obj2EndY < $y1);
-        
-        // Objects are touching if they are adjacent horizontally and overlap vertically,
-        // OR they are adjacent vertically and overlap horizontally
-        return ($horizontalAdjacent && $verticalOverlap) || ($verticalAdjacent && $horizontalOverlap);
+        return $result;
     }
 
     /**
@@ -420,6 +430,11 @@ class MapGenerator
         $traps = $this->map->getTraps();
         $orientation = $this->detectTrapOrientation($traps);
         
+        // Ensure trap zones are calculated before generating spiral positions
+        if (empty($this->trapZoneBounds)) {
+            $this->createTrapNoOccupyZones();
+        }
+        
         // Generate positions for each trap (first ring as square around zone, then spiral)
         $this->spiralPositions['trap1'] = $this->generateSquarePositionsForTrap($traps[0]->getX(), $traps[0]->getY(), 1, 0);
         $this->spiralPositions['trap2'] = $this->generateSquarePositionsForTrap($traps[1]->getX(), $traps[1]->getY(), 2, 1);
@@ -431,12 +446,14 @@ class MapGenerator
         
         // Generate center spiral positions based on orientation
         if ($orientation === 'horizontal') {
-            // Horizontal layout: traps are side by side, center is between them
+            // Horizontal layout: start at centerY of both 4x4 zones, X = x2-4
+            // For horizontal layout, the 4x4 zones are centered on the trap Y coordinates
             $leftX = min($traps[0]->getX(), $traps[1]->getX()) + 3;
             $rightX = max($traps[0]->getX(), $traps[1]->getX());
             $midX = round(($leftX + $rightX) / 2) - 1;
             
             // Calculate centerY that aligns with one of the first ring Y-values of the traps
+            // First, get the zone centers for both traps
             $trap1ZoneCenterY = round(($this->trapZoneBounds[0]['startY'] + $this->trapZoneBounds[0]['endY']) / 2);
             $trap2ZoneCenterY = round(($this->trapZoneBounds[1]['startY'] + $this->trapZoneBounds[1]['endY']) / 2);
             
@@ -464,12 +481,14 @@ class MapGenerator
             
             $midY = $bestY;
         } else {
-            // Vertical layout: traps are stacked, center is between them vertically
+            // Vertical layout: start at centerX of both 4x4 zones, Y = y2-2
+            // For vertical layout, the 4x4 zones are centered on the trap X coordinates
             $bottomY = min($traps[0]->getY(), $traps[1]->getY()) + 3;
             $topY = max($traps[0]->getY(), $traps[1]->getY());
             $midY = round(($bottomY + $topY) / 2) - 1;
             
             // Calculate centerX that aligns with one of the first ring X-values of the traps
+            // First, get the zone centers for both traps
             $trap1ZoneCenterX = round(($this->trapZoneBounds[0]['startX'] + $this->trapZoneBounds[0]['endX']) / 2);
             $trap2ZoneCenterX = round(($this->trapZoneBounds[1]['startX'] + $this->trapZoneBounds[1]['endX']) / 2);
             
@@ -477,13 +496,13 @@ class MapGenerator
             $trap1FirstRingX = [$trap1ZoneCenterX - 4, $trap1ZoneCenterX - 2, $trap1ZoneCenterX, $trap1ZoneCenterX + 2];
             $trap2FirstRingX = [$trap2ZoneCenterX - 4, $trap2ZoneCenterX - 2, $trap2ZoneCenterX, $trap2ZoneCenterX + 2];
             
-            // Find an X-value that appears in both first rings or is close to both
+            // Find a X-value that appears in both first rings or is close to both
             $allFirstRingX = array_merge($trap1FirstRingX, $trap2FirstRingX);
             $leftX = min($traps[0]->getX(), $traps[1]->getX());
             $rightX = max($traps[0]->getX(), $traps[1]->getX()) + 3;
             $originalMidX = round(($leftX + $rightX) / 2) - 1; // Original calculation as fallback
             
-            // Try to find an X-value that's close to the midpoint and aligns with first ring patterns
+            // Try to find a X-value that's close to the midpoint and aligns with first ring patterns
             $bestX = $originalMidX;
             $minDistance = PHP_INT_MAX;
             
@@ -831,8 +850,16 @@ class MapGenerator
                 $positions[$posKey] = $pos;
             }
         } else {
-            // For center positioning, sort all positions by proximity to center
+            // For center positioning, prioritize positions at centerX first, then by distance
             uasort($positions, function ($a, $b) use ($centerX, $centerY) {
+                // First priority: positions at centerX
+                $aAtCenterX = ($a[0] === $centerX);
+                $bAtCenterX = ($b[0] === $centerX);
+                
+                if ($aAtCenterX && !$bAtCenterX) return -1; // a comes first
+                if (!$aAtCenterX && $bAtCenterX) return 1;  // b comes first
+                
+                // If both are at centerX or both are not at centerX, sort by distance
                 $distA = sqrt(pow($a[0] - $centerX, 2) + pow($a[1] - $centerY, 2));
                 $distB = sqrt(pow($b[0] - $centerX, 2) + pow($b[1] - $centerY, 2));
                 return $distA <=> $distB;
@@ -1058,10 +1085,402 @@ class MapGenerator
         $centerX = round(($zoneBounds['startX'] + $zoneBounds['endX']) / 2);
         $centerY = round(($zoneBounds['startY'] + $zoneBounds['endY']) / 2);
         
-        // First ring positions are at distance 2 from zone center (X±4, Y±4, X±2, Y±2)
-        $firstRingXCoords = [$centerX - 4, $centerX - 2, $centerX, $centerX + 2];
-        $firstRingYCoords = [$centerY - 4, $centerY - 2, $centerY, $centerY + 2];
+        // First ring positions: range from x-4 to x+2 with step 2, excluding zone overlap
+        $xDiff = $x - $centerX;
+        $yDiff = $y - $centerY;
         
-        return in_array($x, $firstRingXCoords) && in_array($y, $firstRingYCoords);
+        // Check if position is in the first ring range
+        $inXRange = ($xDiff >= -4 && $xDiff <= 2 && ($xDiff % 2 === 0));
+        $inYRange = ($yDiff >= -4 && $yDiff <= 2 && ($yDiff % 2 === 0));
+        
+        // Must be in both ranges and not overlap with the zone itself
+        if ($inXRange && $inYRange) {
+            // Check if position overlaps with the zone
+            $zoneBounds = $this->trapZoneBounds[$trapIndex];
+            if ($x >= $zoneBounds['startX'] && $x < $zoneBounds['endX'] && 
+                $y >= $zoneBounds['startY'] && $y < $zoneBounds['endY']) {
+                return false; // Position overlaps with zone, not in first ring
+            }
+            return true; // Position is in first ring
+        }
+        
+        return false;
+    }
+
+    /**
+     * Automatically place objects when they're added to the map
+     * - Traps and misc objects are placed at their specified positions
+     * - Banners are automatically placed adjacent to traps
+     * - Triggers immediate map generation if no map exists yet
+     */
+    public function autoPlaceObject($object): void
+    {
+        if ($object instanceof Trap) {
+            $this->autoPlaceTrap($object);
+        } elseif ($object instanceof MiscObject) {
+            $this->autoPlaceMiscObject($object);
+        }
+        
+        // Generate map immediately if we have at least 2 traps
+        $traps = $this->map->getTraps();
+        if (count($traps) >= 2) {
+            // Only generate if we haven't already generated for this number of traps
+            if (empty($this->spiralPositions) || count($this->spiralPositions) < 3) {
+                $this->generateMapImmediately();
+            }
+        }
+    }
+
+    /**
+     * Generate map immediately when objects are placed
+     * This creates the 4x4 zones and places any existing furnaces
+     */
+    private function generateMapImmediately(): void
+    {
+        // Generate spiral positions if not already done
+        if (empty($this->spiralPositions)) {
+            $this->generateSpiralPositions();
+        }
+        
+        // Place any existing furnaces
+        $furnaces = $this->map->getFurnaces();
+        if (!empty($furnaces)) {
+            $this->placeExistingFurnaces($furnaces);
+        }
+    }
+
+    /**
+     * Place existing furnaces on the map
+     */
+    private function placeExistingFurnaces(array $furnaces): void
+    {
+        $placedFurnaces = [];
+        $remainingFurnaces = [];
+        $cantDo = [];
+
+        foreach ($furnaces as $furnace) {
+            if ($furnace->isLocked()) {
+                $placedFurnaces[] = $furnace;
+                continue;
+            }
+
+            $trapId = $furnace->getTrapPref();
+            
+            if ($trapId == '1' || $trapId == '2' || strtolower($trapId) === 'both') {
+                $spiralPositions = $this->getSpiralPositionsForTrap($trapId);
+                $placedFurnace = $this->placeFurnace($furnace, $spiralPositions);
+                if ($placedFurnace) {
+                    $placedFurnaces[] = $placedFurnace;
+                }
+            } else {
+                if (strtolower($trapId) === 'n/a') {
+                    $cantDo[] = $furnace;
+                } else {
+                    $remainingFurnaces[] = $furnace;
+                }
+            }
+        }
+        
+        // Place remaining furnaces in center area
+        $remainingFurnaces = array_merge($remainingFurnaces, $cantDo);
+        foreach ($remainingFurnaces as $furnace) {
+            if ($furnace->isLocked()) {
+                $placedFurnaces[] = $furnace;
+                continue;
+            }
+
+            $spiralPositions = $this->spiralPositions['center'];
+            $placedFurnace = $this->placeFurnace($furnace, $spiralPositions);
+            if ($placedFurnace) {
+                $placedFurnaces[] = $placedFurnace;
+            }
+        }
+
+        // Update map with placed furnaces
+        $this->map->setFurnaces($placedFurnaces);
+    }
+
+    /**
+     * Automatically place a trap and update the map
+     */
+    private function autoPlaceTrap(Trap $trap): void
+    {
+        // Add trap directly to map's traps array to avoid position conflicts
+        $traps = $this->map->getTraps();
+        $traps[] = $trap;
+        
+        // Use reflection to set the traps array directly
+        $reflection = new \ReflectionClass($this->map);
+        $trapsProperty = $reflection->getProperty('traps');
+        $trapsProperty->setAccessible(true);
+        $trapsProperty->setValue($this->map, $traps);
+        
+        // Mark trap position as occupied in MapGenerator
+        $this->markPositionOccupied($trap->getX(), $trap->getY(), $trap->getSize(), 'trap');
+        
+        // Only regenerate spiral positions if we now have 2+ traps
+        if (count($traps) >= 2) {
+            // Ensure zones are calculated first
+            $this->createTrapNoOccupyZones();
+            $this->generateSpiralPositions();
+        }
+        
+        // Only recalculate trap zones if we already have zones (i.e., not the first time)
+        if (!empty($this->trapZoneBounds)) {
+            $this->recalculateTrapZones();
+        }
+    }
+
+    /**
+     * Automatically place a misc object
+     * - If it's a banner, place it adjacent to a trap
+     * - Otherwise, place it at the specified position
+     */
+    private function autoPlaceMiscObject(MiscObject $object): void
+    {
+        if (strtolower($object->getName()) === 'banner') {
+            $this->autoPlaceBanner($object);
+        } else {
+            // Place non-banner misc objects at their specified position
+            // Check if position is available (non-banners cannot be placed in 4x4 zones)
+            if (!$this->isPositionAvailable($object->getX(), $object->getY(), $object->getSize(), 'general')) {
+                // Position is not available, find an alternative position
+                $alternativePosition = $this->findAlternativePosition($object);
+                if ($alternativePosition) {
+                    $object->setPosition($alternativePosition['x'], $alternativePosition['y']);
+                }
+            }
+            
+            // Add directly to map's miscObjects array to avoid position conflicts
+            $miscObjects = $this->map->getMiscObjects();
+            $miscObjects[] = $object;
+            
+            // Use reflection to set the miscObjects array directly
+            $reflection = new \ReflectionClass($this->map);
+            $miscObjectsProperty = $reflection->getProperty('miscObjects');
+            $miscObjectsProperty->setAccessible(true);
+            $miscObjectsProperty->setValue($this->map, $miscObjects);
+            
+            // Mark position as occupied in MapGenerator
+            $this->markPositionOccupied($object->getX(), $object->getY(), $object->getSize(), 'misc');
+        }
+    }
+
+    /**
+     * Find an alternative position for a misc object if the original position is occupied
+     */
+    private function findAlternativePosition(MiscObject $object): ?array
+    {
+        $size = $object->getSize();
+        $originalX = $object->getX();
+        $originalY = $object->getY();
+        
+        // Try positions in a spiral pattern around the original position
+        $spiralRadius = 1;
+        $maxRadius = 10; // Limit search radius
+        
+        while ($spiralRadius <= $maxRadius) {
+            for ($dx = -$spiralRadius; $dx <= $spiralRadius; $dx++) {
+                for ($dy = -$spiralRadius; $dy <= $spiralRadius; $dy++) {
+                    // Only check positions at the current radius
+                    if (abs($dx) === $spiralRadius || abs($dy) === $spiralRadius) {
+                        $newX = $originalX + $dx;
+                        $newY = $originalY + $dy;
+                        
+                        if ($this->isPositionAvailable($newX, $newY, $size, 'general')) {
+                            return ['x' => $newX, 'y' => $newY];
+                        }
+                    }
+                }
+            }
+            $spiralRadius++;
+        }
+        
+        return null; // No alternative position found
+    }
+
+    /**
+     * Automatically place a banner adjacent to a trap
+     */
+    private function autoPlaceBanner(MiscObject $banner): void
+    {
+        // Check if the banner's position is available (not occupied by any object)
+        if (!$this->isPositionAvailable($banner->getX(), $banner->getY(), $banner->getSize(), 'banner')) {
+            // Position is occupied, find an alternative position
+            $alternativePosition = $this->findAlternativePosition($banner);
+            if ($alternativePosition) {
+                $banner->setPosition($alternativePosition['x'], $alternativePosition['y']);
+            }
+            // If no alternative position found, the banner will be placed at original position anyway
+        }
+        
+        // Add banner to map's miscObjects array
+        $miscObjects = $this->map->getMiscObjects();
+        $miscObjects[] = $banner;
+        
+        // Use reflection to set the miscObjects array directly
+        $reflection = new \ReflectionClass($this->map);
+        $miscObjectsProperty = $reflection->getProperty('miscObjects');
+        $miscObjectsProperty->setAccessible(true);
+        $miscObjectsProperty->setValue($this->map, $miscObjects);
+        
+        // Mark position as occupied in MapGenerator
+        $this->markPositionOccupied($banner->getX(), $banner->getY(), $banner->getSize(), 'misc');
+        
+        // Recalculate trap zones to include the new banner
+        $this->recalculateTrapZones();
+    }
+
+
+
+    /**
+     * Check if two positions overlap
+     */
+    private function positionsOverlap(int $x1, int $y1, int $size1, int $size2, int $x2, int $y2, int $size3, int $size4): bool
+    {
+        $endX1 = $x1 + $size1 - 1;
+        $endY1 = $y1 + $size2 - 1;
+        $endX2 = $x2 + $size3 - 1;
+        $endY2 = $y2 + $size4 - 1;
+        
+        return !($endX1 < $x2 || $endX2 < $x1 || $endY1 < $y2 || $endY2 < $y1);
+    }
+
+    /**
+     * Check if a position is available for placement
+     * Banners are allowed to be placed adjacent to traps even if they're in the 4x4 zone
+     */
+    private function isPositionAvailable(int $x, int $y, int $size, string $objectType = 'general'): bool
+    {
+        for ($dx = 0; $dx < $size; $dx++) {
+            for ($dy = 0; $dy < $size; $dy++) {
+                $posX = $x + $dx;
+                $posY = $y + $dy;
+                if (isset($this->occupiedPositions["$posX,$posY"])) {
+                    $occupier = $this->occupiedPositions["$posX,$posY"];
+                    
+                    // If it's a banner and the position is in a trap zone, check if it's adjacent to a trap
+                    if ($objectType === 'banner' && $occupier === 'trap_zone') {
+                        if (!$this->isBannerAdjacentToTrap($x, $y, $size)) {
+                            return false;
+                        }
+                    } else {
+                        // For non-banners or non-adjacent banners, any occupied position is blocked
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Check if a banner position is adjacent to a trap
+     */
+    private function isBannerAdjacentToTrap(int $bannerX, int $bannerY, int $bannerSize): bool
+    {
+        $traps = $this->map->getTraps();
+        
+        foreach ($traps as $trap) {
+            $trapX = $trap->getX();
+            $trapY = $trap->getY();
+            $trapSize = $trap->getSize();
+            
+            // Check if banner is adjacent to this trap
+            $bannerEndX = $bannerX + $bannerSize - 1;
+            $bannerEndY = $bannerY + $bannerSize - 1;
+            $trapEndX = $trapX + $trapSize - 1;
+            $trapEndY = $trapY + $trapSize - 1;
+            
+            // Check horizontal adjacency (banner is to the left or right of trap)
+            $horizontalAdjacent = (
+                ($bannerEndX + 1 === $trapX) || // Banner is to the left of trap
+                ($trapEndX + 1 === $bannerX)    // Banner is to the right of trap
+            );
+            
+            // Check vertical adjacency (banner is above or below trap)
+            $verticalAdjacent = (
+                ($bannerEndY + 1 === $trapY) || // Banner is above trap
+                ($trapEndY + 1 === $bannerY)    // Banner is below trap
+            );
+            
+            // Check if banner overlaps horizontally and vertically with trap
+            $horizontalOverlap = !($bannerEndX < $trapX || $trapEndX < $bannerX);
+            $verticalOverlap = !($bannerEndY < $trapY || $trapEndY < $bannerY);
+            
+            // Banner is adjacent if it's horizontally adjacent and overlaps vertically,
+            // OR it's vertically adjacent and overlaps horizontally
+            if (($horizontalAdjacent && $verticalOverlap) || ($verticalAdjacent && $horizontalOverlap)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Recalculate trap zones to include any new banners
+     * This adjusts the 4x4 zones dynamically when banners are added adjacent to traps
+     */
+    private function recalculateTrapZones(): void
+    {
+        // Clear existing trap zones
+        foreach ($this->trapZoneBounds as $index => $zoneBounds) {
+            for ($x = $zoneBounds['startX']; $x < $zoneBounds['endX']; $x++) {
+                for ($y = $zoneBounds['startY']; $y < $zoneBounds['endY']; $y++) {
+                    if (isset($this->occupiedPositions["$x,$y"]) && $this->occupiedPositions["$x,$y"] === 'trap_zone') {
+                        unset($this->occupiedPositions["$x,$y"]);
+                    }
+                }
+            }
+        }
+        
+        // Clear trap zone bounds
+        $this->trapZoneBounds = [];
+        
+        // Recalculate zones with updated banner positions
+        $this->createTrapNoOccupyZones();
+        
+        // If we have furnaces, we need to check if any are now in invalid positions
+        $furnaces = $this->map->getFurnaces();
+        if (!empty($furnaces)) {
+            $this->validateAndRepositionFurnaces($furnaces);
+        }
+    }
+
+    /**
+     * Validate and reposition furnaces that may now be in invalid positions
+     * after zone recalculation
+     */
+    private function validateAndRepositionFurnaces(array $furnaces): void
+    {
+        $repositionedFurnaces = [];
+        
+        foreach ($furnaces as $furnace) {
+            if ($furnace->isLocked()) {
+                $repositionedFurnaces[] = $furnace;
+                continue;
+            }
+            
+            // Check if furnace is in a valid position
+            if ($furnace->hasPosition()) {
+                $furnaceX = $furnace->getX();
+                $furnaceY = $furnace->getY();
+                $furnaceSize = $furnace->getSize();
+                
+                if (!$this->isPositionAvailable($furnaceX, $furnaceY, $furnaceSize, 'general')) {
+                    // Furnace is in an invalid position, need to reposition it
+                    $furnace->setPosition(null, null); // Clear position
+                }
+            }
+            
+            $repositionedFurnaces[] = $furnace;
+        }
+        
+        // Update map with repositioned furnaces
+        $this->map->setFurnaces($repositionedFurnaces);
+        
+        // Regenerate map to place repositioned furnaces
+        $this->generateMapImmediately();
     }
 } 

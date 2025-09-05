@@ -492,4 +492,119 @@ class MapGeneratorTest extends TestCase
         $this->assertGreaterThanOrEqual(13, $zoneBounds['startY'], 'Zone should start at reasonable Y position');
         $this->assertLessThanOrEqual(19, $zoneBounds['endY'], 'Zone should end at reasonable Y position');
     }
+
+    public function testBothPreferencePlacementBothLayouts(): void
+    {
+        // Test 1: Vertical Layout (same X coordinates)
+        echo "\n=== TESTING VERTICAL LAYOUT ===";
+        $mapVertical = new Map('Vertical Test', 'v1', 'vertical_test', 50);
+        $trap1Vertical = new Trap(15, 10, 'trap1'); // Top trap
+        $trap2Vertical = new Trap(15, 25, 'trap2'); // Bottom trap (same X = vertical layout)
+        $mapVertical->addTrap($trap1Vertical);
+        $mapVertical->addTrap($trap2Vertical);
+        
+        // Add furnaces with "both" preference
+        $furnace1Vertical = new Furnace("Both1_Vert", "FC1", 100, "R1", 50, 'both');
+        $furnace2Vertical = new Furnace("Both2_Vert", "FC2", 90, "R2", 45, 'both');
+        $mapVertical->addFurnace($furnace1Vertical);
+        $mapVertical->addFurnace($furnace2Vertical);
+        
+        $mapGeneratorVertical = new MapGenerator($mapVertical);
+        
+        // Debug vertical layout
+        $reflection = new \ReflectionClass($mapGeneratorVertical);
+        $spiralPositionsProperty = $reflection->getProperty('spiralPositions');
+        $spiralPositionsProperty->setAccessible(true);
+        $spiralPositionsVertical = $spiralPositionsProperty->getValue($mapGeneratorVertical);
+        
+        $trapZoneBoundsProperty = $reflection->getProperty('trapZoneBounds');
+        $trapZoneBoundsProperty->setAccessible(true);
+        $trapZoneBoundsVertical = $trapZoneBoundsProperty->getValue($mapGeneratorVertical);
+        
+        $trap1ZoneCenterX = round(($trapZoneBoundsVertical[0]['startX'] + $trapZoneBoundsVertical[0]['endX']) / 2);
+        $trap1ZoneCenterY = round(($trapZoneBoundsVertical[0]['startY'] + $trapZoneBoundsVertical[0]['endY']) / 2);
+        $trap2ZoneCenterX = round(($trapZoneBoundsVertical[1]['startX'] + $trapZoneBoundsVertical[1]['endX']) / 2);
+        $trap2ZoneCenterY = round(($trapZoneBoundsVertical[1]['startY'] + $trapZoneBoundsVertical[1]['endY']) / 2);
+        
+        echo "\nVertical Layout:";
+        echo "\n  Trap1 zone center: ($trap1ZoneCenterX, $trap1ZoneCenterY)";
+        echo "\n  Trap2 zone center: ($trap2ZoneCenterX, $trap2ZoneCenterY)";
+        
+        // For vertical layout: centerX = center of both 4x4 zones, middleY = point between zones
+        $expectedCenterXVertical = round(($trap1ZoneCenterX + $trap2ZoneCenterX) / 2);
+        $bottomY = min($trap1Vertical->getY(), $trap2Vertical->getY()) + 3;
+        $topY = max($trap1Vertical->getY(), $trap2Vertical->getY());
+        $expectedMiddleYVertical = round(($bottomY + $topY) / 2) - 1;
+        
+        echo "\n  Expected centerX: $expectedCenterXVertical (center of both 4x4 zones)";
+        echo "\n  Expected middleY: $expectedMiddleYVertical (point between both zones)";
+        
+        $mapGeneratorVertical->generateMap();
+        $placedFurnacesVertical = $mapVertical->getFurnaces();
+        
+        // Verify vertical layout furnaces
+        foreach ($placedFurnacesVertical as $index => $furnace) {
+            echo "\n  Vertical furnace $index at ({$furnace->getX()}, {$furnace->getY()})";
+            
+            // Should be at centerX of both 4x4 zones
+            $this->assertEquals($expectedCenterXVertical, $furnace->getX(), "Vertical furnace $index should be at centerX of both 4x4 zones");
+            
+            // Y should be between the traps
+            $this->assertGreaterThan(10, $furnace->getY(), "Vertical furnace $index should be below trap1");
+            $this->assertLessThan(25, $furnace->getY(), "Vertical furnace $index should be above trap2");
+        }
+        
+        // Test 2: Horizontal Layout (same Y coordinates)
+        echo "\n\n=== TESTING HORIZONTAL LAYOUT ===";
+        $mapHorizontal = new Map('Horizontal Test', 'v1', 'horizontal_test', 50);
+        $trap1Horizontal = new Trap(10, 15, 'trap1'); // Left trap
+        $trap2Horizontal = new Trap(25, 15, 'trap2'); // Right trap (same Y = horizontal layout)
+        $mapHorizontal->addTrap($trap1Horizontal);
+        $mapHorizontal->addTrap($trap2Horizontal);
+        
+        // Add furnaces with "both" preference
+        $furnace1Horizontal = new Furnace("Both1_Horiz", "FC1", 100, "R1", 50, 'both');
+        $furnace2Horizontal = new Furnace("Both2_Horiz", "FC2", 90, "R2", 45, 'both');
+        $mapHorizontal->addFurnace($furnace1Horizontal);
+        $mapHorizontal->addFurnace($furnace2Horizontal);
+        
+        $mapGeneratorHorizontal = new MapGenerator($mapHorizontal);
+        
+        // Debug horizontal layout
+        $spiralPositionsHorizontal = $spiralPositionsProperty->getValue($mapGeneratorHorizontal);
+        $trapZoneBoundsHorizontal = $trapZoneBoundsProperty->getValue($mapGeneratorHorizontal);
+        
+        $trap1ZoneCenterXHoriz = round(($trapZoneBoundsHorizontal[0]['startX'] + $trapZoneBoundsHorizontal[0]['endX']) / 2);
+        $trap1ZoneCenterYHoriz = round(($trapZoneBoundsHorizontal[0]['startY'] + $trapZoneBoundsHorizontal[0]['endY']) / 2);
+        $trap2ZoneCenterXHoriz = round(($trapZoneBoundsHorizontal[1]['startX'] + $trapZoneBoundsHorizontal[1]['endX']) / 2);
+        $trap2ZoneCenterYHoriz = round(($trapZoneBoundsHorizontal[1]['startY'] + $trapZoneBoundsHorizontal[1]['endY']) / 2);
+        
+        echo "\nHorizontal Layout:";
+        echo "\n  Trap1 zone center: ($trap1ZoneCenterXHoriz, $trap1ZoneCenterYHoriz)";
+        echo "\n  Trap2 zone center: ($trap2ZoneCenterXHoriz, $trap2ZoneCenterYHoriz)";
+        
+        // For horizontal layout: centerY = center of both 4x4 zones, middleX = point between zones
+        $expectedCenterYHorizontal = round(($trap1ZoneCenterYHoriz + $trap2ZoneCenterYHoriz) / 2);
+        $leftX = min($trap1Horizontal->getX(), $trap2Horizontal->getX()) + 3;
+        $rightX = max($trap1Horizontal->getX(), $trap2Horizontal->getX());
+        $expectedMiddleXHorizontal = round(($leftX + $rightX) / 2) - 1;
+        
+        echo "\n  Expected centerY: $expectedCenterYHorizontal (center of both 4x4 zones)";
+        echo "\n  Expected middleX: $expectedMiddleXHorizontal (point between both zones)";
+        
+        $mapGeneratorHorizontal->generateMap();
+        $placedFurnacesHorizontal = $mapHorizontal->getFurnaces();
+        
+        // Verify horizontal layout furnaces
+        foreach ($placedFurnacesHorizontal as $index => $furnace) {
+            echo "\n  Horizontal furnace $index at ({$furnace->getX()}, {$furnace->getY()})";
+            
+            // Should be at centerY of both 4x4 zones
+            $this->assertEquals($expectedCenterYHorizontal, $furnace->getY(), "Horizontal furnace $index should be at centerY of both 4x4 zones");
+            
+            // X should be between the traps
+            $this->assertGreaterThan(10, $furnace->getX(), "Horizontal furnace $index should be to the right of trap1");
+            $this->assertLessThan(25, $furnace->getX(), "Horizontal furnace $index should be to the left of trap2");
+        }
+    }
 } 
