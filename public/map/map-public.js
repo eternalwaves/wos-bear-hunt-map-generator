@@ -1,9 +1,22 @@
 let currentMapId = null;
 let currentVersion = null;
 let currentMapData = null;
+let mapKonvaModule = null;
 
 // Initialize the page
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize Konva map (read-only for public view)
+    try {
+        mapKonvaModule = await import('../js/map-konva.js');
+        mapKonvaModule.initMap('mapCanvasContainer');
+        // Disable dragging in public view
+        if (mapKonvaModule.setDragEnabled) {
+            mapKonvaModule.setDragEnabled(false);
+        }
+    } catch (error) {
+        console.error('Failed to load Konva map module:', error);
+    }
+
     // Check for URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const mapIdParam = urlParams.get('map_id');
@@ -107,8 +120,25 @@ function displayChiefsTable(furnaces) {
 }
 
 function displayMap(mapData) {
-    // Use the same SVG rendering as the private page
-    renderSVG();
+    // Use Konva canvas rendering instead of SVG
+    if (mapKonvaModule && currentMapData) {
+        // Convert mapData to Konva format
+        const konvaMapData = {
+            traps: (currentMapData.traps || []).map(trap => ({ x: trap.x, y: trap.y })),
+            miscObjects: (currentMapData.misc || []).map(obj => ({ x: obj.x, y: obj.y, size: obj.size, name: obj.name })),
+            furnaces: (currentMapData.furnaces || []).map(furnace => ({
+                x: furnace.x !== null && furnace.x !== undefined ? furnace.x : null,
+                y: furnace.y !== null && furnace.y !== undefined ? furnace.y : null,
+                name: furnace.name || '',
+                id: furnace.id || '',
+                status: 'assigned' // Public view doesn't show status colors
+            }))
+        };
+        mapKonvaModule.renderMap(konvaMapData);
+    } else {
+        // Fallback to SVG if Konva not available
+        renderSVG();
+    }
 }
 
 function renderSVG() {
@@ -116,7 +146,7 @@ function renderSVG() {
         return;
     }
     
-    // Use the same SVG endpoint as the private page
+    // Use the same SVG endpoint as the private page (fallback)
     let svgUrl = `../map.svg?map_id=${currentMapId}`;
     if (currentVersion) {
         svgUrl += `&version=${currentVersion}`;

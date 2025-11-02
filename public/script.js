@@ -7,6 +7,9 @@ let currentMapId = null;
 let currentVersion = null;
 let originalSavedGearData = {}; // Store original saved gear data for all furnaces
 
+// Konva map module (will be imported)
+let mapKonvaModule = null;
+
 // Authentication check
 // Check authentication on page load
 async function checkAuthentication() {
@@ -42,6 +45,21 @@ document.addEventListener("DOMContentLoaded", async function() {
     // Check authentication first
     if (!await checkAuthentication()) {
         return;
+    }
+    
+    // Initialize Konva map
+    try {
+        mapKonvaModule = await import('./js/map-konva.js');
+        mapKonvaModule.initMap('mapCanvasContainer');
+        
+        // Set up callback for object moves
+        window.onMapObjectMoved = function(objData) {
+            if (objData.type === 'furnace') {
+                updateFurnacePosition(objData.id, objData.x, objData.y);
+            }
+        };
+    } catch (error) {
+        console.error('Failed to load Konva map module:', error);
     }
     
     // Load user info
@@ -416,7 +434,7 @@ function loadObjects(loadMap = true) {
                 updateTable("furnaceTable", mapData.furnaces, ["name", "level", "power", "rank", "participation", "trap_pref", "x", "y"], "deleteFurnace");
 
                 furnaces = mapData.furnaces;
-                occupied = new Set(Object.keys(mapData.occupied));
+                occupied = new Set(Object.keys(mapData.occupied || {}));
                 newOccupied = new Set(occupied);
                 cellSize = mapData.cellSize || 50;
                 
@@ -448,30 +466,19 @@ function loadObjects(loadMap = true) {
                 }
                 
                 addLockListeners();
+
+                // Render map using Konva if enabled
+                if (loadMap && mapKonvaModule) {
+                    const konvaMapData = {
+                        traps: mapData.traps || [],
+                        miscObjects: mapData.misc || [],
+                        furnaces: mapData.furnaces || [],
+                    };
+                    mapKonvaModule.renderMap(konvaMapData);
+                }
             } else {
                 console.error("Error loading objects:", data.message);
             }
-        })
-        .then(() => {
-            if (loadMap) {
-                // Use the dynamic map.svg PHP endpoint
-                let svgUrl = `map.svg?map_id=${currentMapId}`;
-                if (currentVersion) {
-                    svgUrl += `&version=${currentVersion}`;
-                }
-
-                return fetch(svgUrl, { cache: "no-store" });
-            }
-            return Promise.reject();
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.text();
-            }
-            return Promise.reject();
-        })
-        .then(svg => {
-            renderSVG(svg);
         })
         .catch(() => { return; })
         .finally(() => {
@@ -570,6 +577,15 @@ function updateButtons() {
 }
 
 function hasMap() {
+    // Check if Konva map is initialized and has objects
+    if (mapKonvaModule) {
+        // Check if there are any map objects rendered
+        const container = document.getElementById('mapCanvasContainer');
+        if (container && container.querySelector('canvas')) {
+            return true;
+        }
+    }
+    // Fallback: check for SVG (legacy)
     if (document.querySelectorAll('#map svg').length) {
         return true;
     }
@@ -958,9 +974,8 @@ function updateFurnaceStatus(id) {
             return Promise.reject();
         }
     })
-    .then(svg => {
-        renderSVG(svg);
-        loadObjects(false);
+    .then(() => {
+        loadObjects(true);
         updateButtons();
     })
     .catch(error => {
@@ -1018,36 +1033,31 @@ function updateFurnaces() {
     .then(response => response.json())
     .then(data => {
         if (data.status === "success") {
-            return regenerateSvg();
+            document.querySelectorAll("#furnaceTable tbody tr.unsaved").forEach((row) => row.classList.remove('unsaved'));
+            
+            // 6. Update saved data for all furnaces when saved to server
+            furnaces.forEach(furnace => {
+                originalSavedGearData[furnace.id] = {
+                    cap_level: furnace.cap_level || '',
+                    cap_charms: furnace.cap_charms || '',
+                    watch_level: furnace.watch_level || '',
+                    watch_charms: furnace.watch_charms || '',
+                    vest_level: furnace.vest_level || '',
+                    vest_charms: furnace.vest_charms || '',
+                    pants_level: furnace.pants_level || '',
+                    pants_charms: furnace.pants_charms || '',
+                    ring_level: furnace.ring_level || '',
+                    ring_charms: furnace.ring_charms || '',
+                    cane_level: furnace.cane_level || '',
+                    cane_charms: furnace.cane_charms || ''
+                };
+            });
+            
+            loadObjects(true);
+            updateButtons();
         } else {
             alert("Error updating furnaces: " + data.message);
-            return Promise.reject();
         }
-    })
-    .then(svg => {
-        document.querySelectorAll("#furnaceTable tbody tr.unsaved").forEach((row) => row.classList.remove('unsaved'));
-        
-        // 6. Update saved data for all furnaces when saved to server
-        furnaces.forEach(furnace => {
-            originalSavedGearData[furnace.id] = {
-                cap_level: furnace.cap_level || '',
-                cap_charms: furnace.cap_charms || '',
-                watch_level: furnace.watch_level || '',
-                watch_charms: furnace.watch_charms || '',
-                vest_level: furnace.vest_level || '',
-                vest_charms: furnace.vest_charms || '',
-                pants_level: furnace.pants_level || '',
-                pants_charms: furnace.pants_charms || '',
-                ring_level: furnace.ring_level || '',
-                ring_charms: furnace.ring_charms || '',
-                cane_level: furnace.cane_level || '',
-                cane_charms: furnace.cane_charms || ''
-            };
-        });
-        
-        renderSVG(svg);
-        loadObjects(false);
-        updateButtons();
     })
     .catch(error => console.error("Update failed:", error))
     .finally(() => {
@@ -1056,18 +1066,11 @@ function updateFurnaces() {
 }
 
 function regenerateSvg() {
-    // Use the dynamic map.svg PHP endpoint
-    let svgUrl = `map.svg?map_id=${currentMapId}`;
-    if (currentVersion) {
-        svgUrl += `&version=${currentVersion}`;
-    }
-
-    return fetch(svgUrl, { cache: "no-store" })
-    .then(response => {
-        if (response.ok) {
-            return response.text();
-        } else {
-            throw new Error('Failed to fetch SVG');
+    // Legacy function - now just reloads the map via loadObjects
+    // Kept for backward compatibility
+    return Promise.resolve().then(() => {
+        if (mapKonvaModule && currentMapId) {
+            loadObjects(true);
         }
     });
 }
@@ -1436,11 +1439,38 @@ function resetFurnaces() {
 }
 
 function renderSVG(svg) {
+    // Legacy function - now uses Konva
+    // Keep for backward compatibility but try to use Konva if available
+    if (mapKonvaModule && currentMapId) {
+        loadObjects(true);
+        return;
+    }
+    // Fallback to SVG if Konva not available
     document.getElementById("map").innerHTML = svg;
     const mapSVG = document.querySelector("#map svg");
-    const classes = mapSVG.classList;
+    if (mapSVG) {
+        const classes = mapSVG.classList;
+        mapSVG.addEventListener('click', () => classes.toggle('zoomed'));
+    }
+}
+
+function updateFurnacePosition(furnaceId, x, y) {
+    // Update furnace position in the table
+    const row = document.querySelector(`#furnace-${furnaceId}`);
+    if (row) {
+        const xInput = document.getElementById(`furnace-x-${furnaceId}`);
+        const yInput = document.getElementById(`furnace-y-${furnaceId}`);
+        if (xInput) xInput.value = x;
+        if (yInput) yInput.value = y;
+        markRowUnsaved(furnaceId);
+    }
     
-    mapSVG.addEventListener('click', () => classes.toggle('zoomed'));
+    // Update furnace data
+    const furnace = furnaces.find(f => f.id === furnaceId);
+    if (furnace) {
+        furnace.x = x;
+        furnace.y = y;
+    }
 }
 
 // 🚀 Download CSV of Furnaces
@@ -1504,7 +1534,25 @@ function downloadPNG() {
         return;
     }
 
-    // Use the dynamic map.svg PHP endpoint
+    // Use Konva export if available
+    if (mapKonvaModule && mapKonvaModule.exportAsImage) {
+        try {
+            const dataUrl = mapKonvaModule.exportAsImage('png');
+            if (dataUrl) {
+                const a = document.createElement("a");
+                a.href = dataUrl;
+                a.download = `map${currentVersion ? '_' + currentVersion : ''}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                return;
+            }
+        } catch (error) {
+            console.error("Error exporting PNG from Konva:", error);
+        }
+    }
+
+    // Fallback to SVG conversion
     let svgUrl = `map.svg?map_id=${currentMapId}`;
     if (currentVersion) {
         svgUrl += `&version=${currentVersion}`;
