@@ -214,10 +214,43 @@ class MapController
         return ['status' => 'success', 'data' => $map->toArray()];
     }
 
-    private function getAllMaps(): array
+    public function getAllMaps(): array
     {
         $maps = $this->mapService->getAllMaps();
         return ['status' => 'success', 'data' => array_map(fn($map) => $map->toArray(), $maps)];
+    }
+
+
+    public function getPublicMapData(string $mapId, ?string $version = null): array
+    {
+        try {
+            $mapData = $this->mapService->exportMapData($mapId, $version);
+            
+            // Filter furnaces to only include public data (name, trap preference, coordinates, power, participation)
+            $publicFurnaces = array_map(function($furnace) {
+                return [
+                    'name' => $furnace['name'] ?? '',
+                    'trap_pref' => $furnace['trap_pref'] ?? '',
+                    'x' => $furnace['x'] ?? null,
+                    'y' => $furnace['y'] ?? null,
+                    'power' => $furnace['power'] ?? '',
+                    'participation' => $furnace['participation'] ?? '',
+                    'coordinates' => isset($furnace['x'], $furnace['y']) ? "({$furnace['x']}, {$furnace['y']})" : 'Not assigned'
+                ];
+            }, $mapData['furnaces']);
+
+            return [
+                'status' => 'success',
+                'data' => [
+                    'furnaces' => $publicFurnaces,
+                    'traps' => $mapData['traps'],
+                    'misc' => $mapData['misc'],
+                    'cellSize' => $mapData['cellSize']
+                ]
+            ];
+        } catch (\Exception $e) {
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
     }
 
     private function addTrap(): array

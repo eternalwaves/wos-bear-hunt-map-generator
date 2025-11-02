@@ -543,6 +543,15 @@
     <button onclick="downloadPNG()" id="downloadPNGBtn" disabled>Download Map as PNG</button>
     <button onclick="resetData()" id="resetBtn">Reset</button>
     
+    <!-- Public Map URL -->
+    <div id="publicUrlSection" style="display: none; margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px; border: 1px solid #ddd;">
+        <label for="publicUrlInput" style="display: block; margin-bottom: 8px; font-weight: bold;">Public Map URL:</label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="publicUrlInput" readonly style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; font-family: monospace; font-size: 14px;" placeholder="Map URL will appear here after generation">
+            <button onclick="copyPublicUrl()" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">Copy URL</button>
+        </div>
+    </div>
+    
     <!-- Legend -->
     <div id="mapLegend">
         <h2>Legend</h2>

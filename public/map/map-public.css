@@ -1,0 +1,206 @@
+/* Public Map Page Styles */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 2em;
+    text-align: center;
+}
+
+.chiefs-section, .map-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chiefs-section h2, .map-section h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.sortable-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.sortable-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.sortable-table th:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.sortable-table th.sortable {
+    transition: background-color 0.2s ease;
+}
+
+.sort-indicator {
+    margin-left: 5px;
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+.sortable-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.sortable-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.sortable-table tr:hover {
+    background-color: #f0f0f0;
+}
+
+.map-container {
+    text-align: center;
+    padding: 20px;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+#mapDisplay {
+    display: inline-block;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#mapDisplay svg:not(.zoomed) {
+    cursor: -webkit-zoom-in;
+    cursor: zoom-in;
+    height: auto;
+    max-width: 100%;
+}
+
+#mapDisplay svg.zoomed {
+    cursor: -webkit-zoom-out;
+    cursor: zoom-out;
+    height: auto;
+    width: auto;
+}
+
+
+/* Loader styles */
+#loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .header h1 {
+        font-size: 1.5em;
+    }
+    
+    .map-selector select {
+        min-width: 150px;
+        font-size: 14px;
+    }
+    
+    .chiefs-section, .map-section {
+        padding: 15px;
+    }
+    
+    .sortable-table th,
+    .sortable-table td {
+        padding: 8px 6px;
+        font-size: 14px;
+    }
+    
+    #mapDisplay {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+/* Coordinate styling */
+.sortable-table td:nth-child(3) {
+    font-family: monospace;
+    color: #666;
+}
+
+/* Trap preference styling */
+.sortable-table td:nth-child(2) {
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.sortable-table td:nth-child(2):contains("1") {
+    color: #e74c3c;
+}
+
+.sortable-table td:nth-child(2):contains("2") {
+    color: #3498db;
+}
+
+.sortable-table td:nth-child(2):contains("both") {
+    color: #9b59b6;
+}
+
+.sortable-table td:nth-child(2):contains("n/a") {
+    color: #95a5a6;
+}

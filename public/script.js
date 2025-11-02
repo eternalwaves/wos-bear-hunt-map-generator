@@ -230,6 +230,7 @@ function loadSelectedMap() {
     } else {
         document.getElementById("versionControls").style.display = "none";
         clearMapData();
+        updatePublicUrl();
     }
 }
 
@@ -264,6 +265,9 @@ function loadSelectedVersion() {
     
     if (currentVersion) {
         loadObjects();
+    } else {
+        // Version cleared, update URL without version
+        updatePublicUrl();
     }
 }
 
@@ -472,6 +476,7 @@ function loadObjects(loadMap = true) {
         .catch(() => { return; })
         .finally(() => {
             updateButtons();
+            updatePublicUrl();
             loader.style.display = "none";
         });
 
@@ -1114,6 +1119,7 @@ function generateMap() {
         renderSVG(svg);
         loadObjects(false);
         updateButtons();
+        updatePublicUrl();
     })
     .catch(error => console.error("Map generation failed:", error))
     .finally(() => {
@@ -1555,6 +1561,50 @@ function downloadPNG() {
         console.error("PNG download failed:", error);
         alert("Error downloading PNG: " + error.message);
     });
+}
+
+// 🚀 Update Public Map URL
+function updatePublicUrl() {
+    const publicUrlSection = document.getElementById("publicUrlSection");
+    const publicUrlInput = document.getElementById("publicUrlInput");
+    
+    if (!currentMapId) {
+        publicUrlSection.style.display = "none";
+        return;
+    }
+    
+    // Build the public map URL
+    // Replace the current filename with 'map/' to get the public map URL
+    const pathParts = window.location.pathname.split('/').filter(p => p);
+    pathParts[pathParts.length - 1] = 'map';
+    const mapPath = '/' + pathParts.join('/') + '/';
+    let publicUrl = `${window.location.origin}${mapPath}?map_id=${currentMapId}`;
+    
+    if (currentVersion) {
+        publicUrl += `&version=${currentVersion}`;
+    }
+    
+    publicUrlInput.value = publicUrl;
+    publicUrlSection.style.display = "block";
+}
+
+// 🚀 Copy Public URL to Clipboard
+function copyPublicUrl() {
+    const publicUrlInput = document.getElementById("publicUrlInput");
+    publicUrlInput.select();
+    publicUrlInput.setSelectionRange(0, 99999); // For mobile devices
+    
+    try {
+        document.execCommand('copy');
+        alert('URL copied to clipboard!');
+    } catch (err) {
+        // Fallback for modern browsers
+        navigator.clipboard.writeText(publicUrlInput.value).then(() => {
+            alert('URL copied to clipboard!');
+        }).catch(() => {
+            alert('Failed to copy URL. Please select and copy manually.');
+        });
+    }
 }
 
 // 🚀 Reset All Data

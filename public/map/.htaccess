@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Redirect /map/ to /map/index.html
+RewriteCond %{REQUEST_URI} ^/map/?$
+RewriteRule ^(.*)$ /map/index.html [L]
+
+# Handle API requests
+RewriteCond %{REQUEST_URI} ^/map/api/?$
+RewriteRule ^(.*)$ /map/api.php [L]
+
